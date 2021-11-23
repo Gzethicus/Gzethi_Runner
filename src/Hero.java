@@ -28,12 +28,12 @@ public class Hero extends AnimatedThing{
         this.x=(int)this.dX;
 
         //vertical movement
-        if (this.dY<250 || this.vY<0){
+        if (this.dY<350 || this.vY<0){
             this.vY=Math.min(this.vY+.5,6);
         }else{
             if(this.vY>0){this.resetFrame(time);}
             this.vY=0;
-            this.dY=250;
+            this.dY=350;
         }
         this.dY=this.dY+vY;
         this.y=(int)this.dY;
@@ -80,13 +80,8 @@ public class Hero extends AnimatedThing{
         }
     }
 
-    public void loop(){
-        super.loop();
-        this.numberOfLoop+=1;
-    }
-
     public void jump(){
-        if(this.y==250){
+        if(this.y==350){
             this.isJumping=true;
         }
     }

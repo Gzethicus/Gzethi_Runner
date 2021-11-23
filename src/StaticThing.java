@@ -42,6 +42,14 @@ public class StaticThing {
 
     public Rectangle2D getHitBox(){return this.hitBox;}
 
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
+
     public int getWidth(){
         return this.width;
     }

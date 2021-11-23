@@ -3,6 +3,7 @@ public class Camera {
     private int y;
     private double vX=0;
     private double vY=0;
+    private int onScreenNumber=0;
 
     public Camera(int x, int y){
         this.x=x;
@@ -34,8 +35,8 @@ public class Camera {
         this.y=(int)(this.y+vY*0.1);
 
         //looping
-        if(this.x>=800){
-            this.x=this.x-800;
+        if(this.x>=800*(this.onScreenNumber +1)){
+            this.onScreenNumber +=1;
             return true;
         }
         return false;

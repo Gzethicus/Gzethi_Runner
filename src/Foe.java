@@ -1,17 +1,10 @@
-import javafx.geometry.Rectangle2D;
-
 import java.util.ArrayList;
 
 public class Foe extends AnimatedThing {
     private static long lastAttacked;
     public Foe(int x) {
-        super(x, 250,76,94,200,0, "sprites\\foe.png");
+        super(x, 350,76,94,200,0, "sprites\\foe.png");
         this.maxFrames=new int[]{1,4};
-    }
-
-    public void loop(){
-        this.x-=800;
-        this.hitBox=new Rectangle2D(this.x+25,this.y,this.width-50,this.height);
     }
 
     public Projectile update(long time,Camera cam, ArrayList<Projectile> projectiles){
@@ -34,10 +27,10 @@ public class Foe extends AnimatedThing {
     }
 
     public Projectile attack(long time){
-        if(time-this.lastAttacked>1000) {
+        if(time-Foe.lastAttacked>1000) {
             this.attitude=1;
             this.resetFrame(time);
-            this.lastAttacked=time;
+            Foe.lastAttacked=time;
         }
         return null;
     }

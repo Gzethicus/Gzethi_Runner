@@ -73,9 +73,4 @@ public class AnimatedThing {
     public int getHeight() {
         return height;
     }
-
-    public void loop() {
-        this.dX-=800;
-        this.x-=800;
-    }
 }

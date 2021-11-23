@@ -18,7 +18,7 @@ public class Projectile extends AnimatedThing{
         //horizontal movement
         this.dX = this.dX + vX;
         this.x = (int) this.dX;
-        return this.x>1600||this.x<-this.width||this.deletable;
+        return this.relX>1600||this.relX<-this.width||this.deletable;
     }
     public void requestDelete(){this.deletable=true;}
     public boolean isDeletable(){return this.deletable;}

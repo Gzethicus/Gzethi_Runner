@@ -16,8 +16,7 @@ public class GameScene extends Scene {
     private Boolean gameIsResettable=false;
     long gameEndedAt=0;
     private Camera cam;
-    private WorldElement lBackground;
-    private WorldElement rBackground;
+    private ArrayList<Room> backgrounds = new ArrayList<>();
     private StaticThing energy;
     private final ArrayList<StaticThing> liveCounter = new ArrayList<>();
     private final ArrayList<Foe> foes = new ArrayList<>();
@@ -81,10 +80,12 @@ public class GameScene extends Scene {
 
     private void startGame(){
         this.gameIsRunning=true;
-        this.cam = new Camera(0,100);
-        this.lBackground=new WorldElement(0,-100,800,500,"sprites\\desert.png");
-        this.rBackground=new WorldElement(800,-100,800,500,"sprites\\desert.png");
-        this.hero=new Hero(100,250);
+        this.cam = new Camera(0,200);
+        this.backgrounds.add(new Room(null,'r',800,500,"sprites\\desert.png"));
+        for(int i=0;i<(objective/10)+1;i++) {
+            this.backgrounds.add(new Room(backgrounds.get(i), 'r', 800, 500, "sprites\\desert.png"));
+        }
+        this.hero=new Hero(100,350);
         StaticThing energyBar = new StaticThing(278, 275, 44, 9, "sprites\\energy bar.png");
         this.energy=new StaticThing(278,275,44,9,"sprites\\energy bar.png");
         this.energy.setFrame(1);
@@ -94,8 +95,9 @@ public class GameScene extends Scene {
 
         //putting images on window
         pane.getChildren().clear();
-        pane.getChildren().add(this.lBackground.getImage());
-        pane.getChildren().add(this.rBackground.getImage());
+        for(Room room:this.backgrounds){
+            pane.getChildren().add(room.getImage());
+        }
         pane.getChildren().add(energyBar.getImage());
         pane.getChildren().add(this.energy.getImage());
         pane.getChildren().add(this.objectiveTracker);
@@ -111,6 +113,7 @@ public class GameScene extends Scene {
         this.gameIsRunning=false;
         this.gameIsResettable=false;
         this.liveCounter.clear();
+        this.backgrounds.clear();
         this.foes.clear();
         this.allyProjectiles.clear();
         this.enemyProjectiles.clear();
@@ -119,24 +122,15 @@ public class GameScene extends Scene {
     private void update(long time) {
         this.hero.update(time,this.cam,this.foes,this.enemyProjectiles);
 
-        //looping back to the start
+        //generating new foes
         if(this.cam.update(this.hero)){
-            this.hero.loop();
-            for (Foe foe : foes) {
-                foe.loop();
-            }
-            for (Projectile projectile : allyProjectiles) {
-                projectile.loop();
-            }
-            for (Projectile projectile : enemyProjectiles) {
-                projectile.loop();
-            }
             this.generateNewFoes((int)(Math.random()*3)+1);
         }
 
         //Background update
-        this.lBackground.update(this.cam);
-        this.rBackground.update(this.cam);
+        for(Room room:this.backgrounds){
+            room.update(this.cam);
+        }
 
         //updating projectiles and deleting when out of bounds
         for(Projectile projectile : allyProjectiles){
@@ -220,7 +214,7 @@ public class GameScene extends Scene {
         int[] pos={(int)(Math.random()*(950-150*amount)),(int)(Math.random()*(950-150*amount)),(int)(Math.random()*(950-150*amount))};
         Arrays.sort(pos);
         for(int newFoe=0;newFoe<amount;newFoe++){
-            foes.add(new Foe(800+pos[newFoe]+150*newFoe));
+            foes.add(new Foe(this.hero.getX()+800+pos[newFoe]+150*newFoe));
             pane.getChildren().add(foes.get(foes.size()-1).getImage());
         }
     }
