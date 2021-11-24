@@ -89,7 +89,7 @@ public class GameScene extends Scene {
         for(int i=0;i<(objective/10)+1;i++) {
             this.backgrounds.add(new Room(backgrounds.get(i), 'r', 800, 500, "sprites\\desert.png"));
         }
-        this.terrains.add(new Terrain(500,350,100,20,false,"sprites\\platform.png"));
+        this.terrains.add(new Terrain(500,320,100,20,true,"sprites\\platform.png"));
         this.hero=new Hero(100,350);
         StaticThing energyBar = new StaticThing(278, 275, 44, 9, "sprites\\energy bar.png");
         this.energy=new StaticThing(278,275,44,9,"sprites\\energy bar.png");

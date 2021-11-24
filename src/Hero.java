@@ -12,6 +12,7 @@ public class Hero extends AnimatedThing{
     private long invulnStarted=0;
     private boolean isJumping=false;
     private boolean isGrounded = false;
+    private boolean isHardGrounded = false;
     private long jumpStarted=0;
     private final int maxHealth=3;
 
@@ -23,11 +24,7 @@ public class Hero extends AnimatedThing{
     public void update(long time, Camera cam,ArrayList<Terrain> terrains, ArrayList<Foe> foes,ArrayList<Projectile> projectiles){
         super.update(time,cam);
 
-        //horizontal movement
-        this.dX=this.dX+vX;
-        this.x=(int)this.dX;
-
-        //vertical movement
+        //vertical speed
         if (this.dY<350 || this.vY<0){
             this.vY=Math.min(this.vY+.5,6);
             this.isGrounded=false;
@@ -36,7 +33,10 @@ public class Hero extends AnimatedThing{
             this.vY=0;
             this.dY=350;
             this.isGrounded =true;
+            this.isHardGrounded=true;
         }
+
+        //terrain collision detection
         for(Terrain terrain:terrains){
             if(this.x+this.width>terrain.getX()
             & this.x<terrain.getX()+terrain.getWidth()
@@ -45,8 +45,38 @@ public class Hero extends AnimatedThing{
                 this.vY=0;
                 this.dY=terrain.getY()-this.height;
                 this.isGrounded=true;
+                this.isHardGrounded=terrain.isSolid();
+            }
+            if(terrain.isSolid()){
+                if(this.x+this.width>terrain.getX()
+                        & this.x<terrain.getX()+terrain.getWidth()
+                        & this.dY>=terrain.getY()+terrain.getHeight()
+                        & this.dY+this.vY<terrain.getY()+terrain.getHeight()) {
+                    this.vY=0;
+                    this.dY=terrain.getY()+terrain.getHeight();
+                }
+                if(this.y+this.height>terrain.getY()
+                        & this.y<terrain.getY()+terrain.getHeight()
+                        & this.dX+this.width<=terrain.getX()
+                        & this.dX+this.width+this.vX>terrain.getX()) {
+                    this.dX=terrain.getX()-this.width;
+                    this.vX=0;
+                }
+                if(this.y+this.height>terrain.getY()
+                        & this.y<terrain.getY()+terrain.getHeight()
+                        & this.dX>=terrain.getX()+terrain.getWidth()
+                        & this.dX+this.vX<terrain.getX()+terrain.getWidth()) {
+                    this.dX = terrain.getX() + terrain.getWidth();
+                    this.vX = 0;
+                }
             }
         }
+
+        //horizontal movement
+        this.dX=this.dX+vX;
+        this.x=(int)this.dX;
+
+        //vertical movement
         this.dY=this.dY+vY;
         this.y=(int)this.dY;
 
@@ -54,11 +84,10 @@ public class Hero extends AnimatedThing{
         if(this.isJumping) {
             if (isGrounded){
                 this.jumpStarted = time;
-                this.attitude = 1;
                 this.frame = 0;
                 this.vY=-7;
             }
-            if (time-this.jumpStarted>200){
+            if (time-this.jumpStarted>300){
                 this.stopJumping();
             }
             this.vY -= .4;
@@ -66,9 +95,15 @@ public class Hero extends AnimatedThing{
         this.hitBox=new Rectangle2D(this.x+25,this.y,this.width-50,this.height-30);
 
         //attitude
-        if(this.vY<0){this.attitude=1;}
-        if(this.vY>=0){this.attitude=2;}
-        if(this.isGrounded){this.attitude=0;}
+        if(this.isGrounded){
+            this.attitude=0;
+        }else if(this.vY<0){
+            this.attitude=1;
+            this.resetFrame(time);
+        }else{
+            this.attitude=2;
+            this.resetFrame(time);
+        }
         if(this.isAttacking>0){this.attitude+=3;}
         if(((time-this.invulnStarted)/150)%2==0&&(time-this.invulnStarted)<1000){this.attitude=6;}
         this.isAttacking-=1;
@@ -93,7 +128,7 @@ public class Hero extends AnimatedThing{
     }
 
     public void jump(){
-        if(this.y==350){
+        if(this.isGrounded){
             this.isJumping=true;
         }
     }
@@ -133,7 +168,7 @@ public class Hero extends AnimatedThing{
         this.duration=90;
     }
     public void fall(){
-        if(this.isGrounded & this.y<350){
+        if(this.isGrounded & !this.isHardGrounded){
             this.dY+=.1;
         }
     }
