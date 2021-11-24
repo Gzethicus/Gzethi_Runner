@@ -11,8 +11,8 @@ public class Hero extends AnimatedThing{
     private double energy=40;
     private long invulnStarted=0;
     private boolean isJumping=false;
+    private boolean isGrounded = false;
     private long jumpStarted=0;
-    private int numberOfLoop=0;
     private final int maxHealth=3;
 
     public Hero(int x, int y) {
@@ -20,7 +20,7 @@ public class Hero extends AnimatedThing{
         this.maxFrames=new int[]{6,1,1,6,1,1,6};
         this.health=maxHealth;
     }
-    public void update(long time, Camera cam, ArrayList<Foe> foes,ArrayList<Projectile> projectiles){
+    public void update(long time, Camera cam,ArrayList<Terrain> terrains, ArrayList<Foe> foes,ArrayList<Projectile> projectiles){
         super.update(time,cam);
 
         //horizontal movement
@@ -30,17 +30,29 @@ public class Hero extends AnimatedThing{
         //vertical movement
         if (this.dY<350 || this.vY<0){
             this.vY=Math.min(this.vY+.5,6);
+            this.isGrounded=false;
         }else{
             if(this.vY>0){this.resetFrame(time);}
             this.vY=0;
             this.dY=350;
+            this.isGrounded =true;
+        }
+        for(Terrain terrain:terrains){
+            if(this.x+this.width>terrain.getX()
+            & this.x<terrain.getX()+terrain.getWidth()
+            &this.dY+this.height<=terrain.getY()
+            &this.dY+this.height+this.vY>terrain.getY()){
+                this.vY=0;
+                this.dY=terrain.getY()-this.height;
+                this.isGrounded=true;
+            }
         }
         this.dY=this.dY+vY;
         this.y=(int)this.dY;
 
         //jump handling
         if(this.isJumping) {
-            if (this.vY==0){
+            if (isGrounded){
                 this.jumpStarted = time;
                 this.attitude = 1;
                 this.frame = 0;
@@ -54,9 +66,9 @@ public class Hero extends AnimatedThing{
         this.hitBox=new Rectangle2D(this.x+25,this.y,this.width-50,this.height-30);
 
         //attitude
-        if(this.vY==0){this.attitude=0;}
         if(this.vY<0){this.attitude=1;}
-        if(this.vY>0){this.attitude=2;}
+        if(this.vY>=0){this.attitude=2;}
+        if(this.isGrounded){this.attitude=0;}
         if(this.isAttacking>0){this.attitude+=3;}
         if(((time-this.invulnStarted)/150)%2==0&&(time-this.invulnStarted)<1000){this.attitude=6;}
         this.isAttacking-=1;
@@ -120,6 +132,11 @@ public class Hero extends AnimatedThing{
         this.vX=5;
         this.duration=90;
     }
+    public void fall(){
+        if(this.isGrounded & this.y<350){
+            this.dY+=.1;
+        }
+    }
 
     public int getHealth() {
         return this.health;
@@ -130,6 +147,6 @@ public class Hero extends AnimatedThing{
     }
 
     public int getDistance() {
-        return (int)(this.dX/80+this.numberOfLoop*10)-1;
+        return (int)(this.dX/80)-1;
     }
 }

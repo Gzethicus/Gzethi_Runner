@@ -1,6 +1,6 @@
 public class Room extends StaticThing{
-    protected int relX;
-    protected int relY;
+    private int relX;
+    private int relY;
 
     public Room(Room neighbour,char direction, int width, int height, String fileName){
         super(0,0,width,height,fileName);

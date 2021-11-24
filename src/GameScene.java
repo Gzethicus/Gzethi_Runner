@@ -16,7 +16,8 @@ public class GameScene extends Scene {
     private Boolean gameIsResettable=false;
     long gameEndedAt=0;
     private Camera cam;
-    private ArrayList<Room> backgrounds = new ArrayList<>();
+    private final ArrayList<Room> backgrounds = new ArrayList<>();
+    private final ArrayList<Terrain> terrains = new ArrayList<>();
     private StaticThing energy;
     private final ArrayList<StaticThing> liveCounter = new ArrayList<>();
     private final ArrayList<Foe> foes = new ArrayList<>();
@@ -64,6 +65,9 @@ public class GameScene extends Scene {
             if (event.getCode()== KeyCode.D) {
                 hero.sprint();
             }
+            if (event.getCode()== KeyCode.S) {
+                hero.fall();
+            }
         });
         this.setOnKeyReleased((event)->{
             if (event.getCode()== KeyCode.Q) {
@@ -85,6 +89,7 @@ public class GameScene extends Scene {
         for(int i=0;i<(objective/10)+1;i++) {
             this.backgrounds.add(new Room(backgrounds.get(i), 'r', 800, 500, "sprites\\desert.png"));
         }
+        this.terrains.add(new Terrain(500,350,100,20,false,"sprites\\platform.png"));
         this.hero=new Hero(100,350);
         StaticThing energyBar = new StaticThing(278, 275, 44, 9, "sprites\\energy bar.png");
         this.energy=new StaticThing(278,275,44,9,"sprites\\energy bar.png");
@@ -97,6 +102,9 @@ public class GameScene extends Scene {
         pane.getChildren().clear();
         for(Room room:this.backgrounds){
             pane.getChildren().add(room.getImage());
+        }
+        for(Terrain terrain:this.terrains){
+            pane.getChildren().add(terrain.getImage());
         }
         pane.getChildren().add(energyBar.getImage());
         pane.getChildren().add(this.energy.getImage());
@@ -120,7 +128,7 @@ public class GameScene extends Scene {
     }
 
     private void update(long time) {
-        this.hero.update(time,this.cam,this.foes,this.enemyProjectiles);
+        this.hero.update(time,this.cam,this.terrains,this.foes,this.enemyProjectiles);
 
         //generating new foes
         if(this.cam.update(this.hero)){
@@ -130,6 +138,11 @@ public class GameScene extends Scene {
         //Background update
         for(Room room:this.backgrounds){
             room.update(this.cam);
+        }
+
+        //Terrain update
+        for(Terrain terrain:this.terrains){
+            terrain.update(this.cam);
         }
 
         //updating projectiles and deleting when out of bounds
