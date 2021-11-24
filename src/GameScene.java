@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class GameScene extends Scene {
     private static final Pane pane = new Pane();
     private final Stage primaryStage;
-    private Boolean gameIsRunning;
+    private Boolean gameIsRunning=false;
     private Boolean gameIsResettable=false;
     long gameEndedAt=0;
     private Camera cam;
@@ -42,12 +42,64 @@ public class GameScene extends Scene {
         };
         timer.start();
 
-        this.startGame();
+        this.openMenu();
+    }
+
+    private void openMenu(){
+
+        StaticThing background=new StaticThing(-100,-200,800,500,"sprites\\menu.png");
+
+        Button startButton=new Button(150,40,"Start");
+        startButton.addButtonListener(this::startGame);
+
+        Button quitButton=new Button(150,160,"Quit");
+        quitButton.addButtonListener(this.primaryStage::close);
+
+        pane.getChildren().clear();
+        pane.getChildren().add(background.getImage());
+        pane.getChildren().add(startButton);
+        pane.getChildren().add(quitButton);
+        this.primaryStage.show();
+    }
+
+    private void startGame(){
+        this.gameIsRunning=true;
+        this.cam = new Camera(0,200);
+        this.backgrounds.add(new Room(null,'r',800,500,"sprites\\desert.png"));
+        for(int i=0;i<(objective/10)+1;i++) {
+            this.backgrounds.add(new Room(backgrounds.get(i), 'r', 800, 500, "sprites\\desert.png"));
+        }
+        this.terrains.add(new Terrain(500,320,100,20,false,"sprites\\platform.png"));
+        this.hero=new Hero(100,350);
+        StaticThing energyBar = new StaticThing(278, 275, 44, 9, "sprites\\energy bar.png");
+        this.energy=new StaticThing(278,275,44,9,"sprites\\energy bar.png");
+        this.energy.setFrame(1);
+        for(int i=0;i<this.hero.getHealth();i++) {
+            this.liveCounter.add(new StaticThing(10*(i%5+1), 10*((i/5)+1),9,9, "sprites\\heart.png"));
+        }
+
+        //putting images on window
+        pane.getChildren().clear();
+        for(Room room:this.backgrounds){
+            pane.getChildren().add(room.getImage());
+        }
+        for(Terrain terrain:this.terrains){
+            pane.getChildren().add(terrain.getImage());
+        }
+        pane.getChildren().add(energyBar.getImage());
+        pane.getChildren().add(this.energy.getImage());
+        pane.getChildren().add(this.objectiveTracker);
+        this.generateNewFoes((int)(Math.random()*3)+1);
+        pane.getChildren().add(this.hero.getImage());
+        for(StaticThing life : this.liveCounter){
+            pane.getChildren().add(life.getImage());
+        }
+        this.primaryStage.show();
 
         //keybindings
         this.setOnKeyPressed((event)->{
             if(!gameIsRunning&gameIsResettable){
-                startGame();
+                openMenu();
             }
             if (event.getCode()== KeyCode.SPACE) {
                 hero.jump();
@@ -80,40 +132,6 @@ public class GameScene extends Scene {
                 hero.stopJumping();
             }
         });
-    }
-
-    private void startGame(){
-        this.gameIsRunning=true;
-        this.cam = new Camera(0,200);
-        this.backgrounds.add(new Room(null,'r',800,500,"sprites\\desert.png"));
-        for(int i=0;i<(objective/10)+1;i++) {
-            this.backgrounds.add(new Room(backgrounds.get(i), 'r', 800, 500, "sprites\\desert.png"));
-        }
-        this.terrains.add(new Terrain(500,320,100,20,true,"sprites\\platform.png"));
-        this.hero=new Hero(100,350);
-        StaticThing energyBar = new StaticThing(278, 275, 44, 9, "sprites\\energy bar.png");
-        this.energy=new StaticThing(278,275,44,9,"sprites\\energy bar.png");
-        this.energy.setFrame(1);
-        for(int i=0;i<this.hero.getHealth();i++) {
-            this.liveCounter.add(new StaticThing(10*(i%5+1), 10*((i/5)+1),9,9, "sprites\\heart.png"));
-        }
-
-        //putting images on window
-        pane.getChildren().clear();
-        for(Room room:this.backgrounds){
-            pane.getChildren().add(room.getImage());
-        }
-        for(Terrain terrain:this.terrains){
-            pane.getChildren().add(terrain.getImage());
-        }
-        pane.getChildren().add(energyBar.getImage());
-        pane.getChildren().add(this.energy.getImage());
-        pane.getChildren().add(this.objectiveTracker);
-        this.generateNewFoes((int)(Math.random()*3)+1);
-        pane.getChildren().add(this.hero.getImage());
-        for(StaticThing life : this.liveCounter){
-            pane.getChildren().add(life.getImage());
-        }
     }
 
     private void endGame(long time){
@@ -188,11 +206,13 @@ public class GameScene extends Scene {
                 this.allyProjectiles.remove(projectile);
                 this.hero.heal(1);
                 break;
+            //creating new projectile when finished casting
             }else if(projectile!=null){
                 pane.getChildren().add(projectile.getImage());
                 enemyProjectiles.add(projectile);
             }
         }
+        //displaying remaining health
         for(int i=0;i<this.liveCounter.size();i++){
             if(this.hero.getHealth()>i) {
                 this.liveCounter.get(i).setFrame(0);
