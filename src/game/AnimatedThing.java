@@ -9,8 +9,6 @@ public class AnimatedThing {
     protected double dX;
     protected int y;
     protected double dY;
-    protected int relX;
-    protected int relY;
     protected int width;
     protected int height;
     protected int attitude;
@@ -34,7 +32,7 @@ public class AnimatedThing {
         this.duration=duration;
         Image img = new Image(fileName);
         this.image =new ImageView(img);
-        this.image.setViewport(new Rectangle2D(this.width*this.frame, this.height*this.attitude, this.width-1, this.height));
+        this.image.setViewport(new javafx.geometry.Rectangle2D(this.width*this.frame, this.height*this.attitude, this.width-1, this.height));
         this.image.setX(x);
         this.image.setY(y);
     }
@@ -48,17 +46,21 @@ public class AnimatedThing {
                 this.timeOrigin=time;
             }
         }
-        this.image.setViewport(new Rectangle2D(this.width*this.frame, this.height*this.attitude, this.width, this.height));
-        this.relX=this.x-cam.getX();
-        this.image.setX(this.relX);
-        this.relY=this.y-cam.getY();
-        this.image.setY(this.relY);
+        this.image.setViewport(new javafx.geometry.Rectangle2D(this.width*this.frame, this.height*this.attitude, this.width, this.height));
+        int relX=this.x-cam.getX();
+        int relY=this.y-cam.getY();
+        this.image.setX(relX);
+        this.image.setY(relY);
         return false;
     }
 
     protected void resetFrame(long time){
         this.frame=0;
         this.timeOrigin=time;
+    }
+
+    public void setMaxFrames(int[] maxFrames){
+        this.maxFrames=maxFrames;
     }
 
     public ImageView getImage(){return this.image;}

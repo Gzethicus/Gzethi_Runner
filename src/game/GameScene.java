@@ -1,5 +1,14 @@
 package game;
 
+import game.entities.Creature;
+import game.entities.Shot;
+import game.entities.npc.AntiHero;
+import game.entities.players.Gz_37;
+import game.entities.players.Hero;
+import game.entities.players.Player;
+import game.environment.*;
+import game.gui.EnergyBar;
+import game.gui.HeartMeter;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
@@ -7,72 +16,102 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class GameScene extends Scene {
     private static final Pane pane = new Pane();
+    private final AnimationTimer timer;
+
     private Boolean gameIsRunning=false;
     private Boolean gameIsResettable=false;
     long gameEndedAt=0;
+
     private Camera cam;
-    private final ArrayList<Room> backgrounds = new ArrayList<>();
-    private final ArrayList<Terrain> terrains = new ArrayList<>();
-    private StaticThing energy;
-    private final ArrayList<StaticThing> liveCounter = new ArrayList<>();
-    private final ArrayList<Foe> foes = new ArrayList<>();
-    private final ArrayList<Projectile> allyProjectiles = new ArrayList<>();
-    private final ArrayList<Projectile> enemyProjectiles = new ArrayList<>();
-    private Hero hero;
-    private int objective=100;
+    private static Player player;
+    private static final ArrayList<Room> backgrounds = new ArrayList<>();
+    private static final ArrayList<Walkable> walkables = new ArrayList<>();
+    private static final ArrayList<Creature> creatures = new ArrayList<>();
+    private static final ArrayList<game.entities.Projectile> projectiles = new ArrayList<>();
+    private static int xMousePos=0;
+    private static int yMousePos=0;
+
+    private final int objective=100;
+    private int difficulty=3;
     private final Text objectiveTracker = new Text(10,100,"");
     private final ArrayList<OpenMenu> openMenuListeners=new ArrayList<>();
 
     public GameScene() {
-        super(pane,600,300);
-        AnimationTimer timer = new AnimationTimer() {
+        super(pane,1400,300);
+        this.timer = new AnimationTimer() {
             @Override
             public void handle(long time) {
                 if (gameIsRunning) {
                     update(time / 1000000);
-                } else gameIsResettable = time / 1000000 - gameEndedAt > 1000;
+                } else {
+                    gameIsResettable = time / 1000000 - gameEndedAt > 1000;
+                    if(gameIsResettable){timer.stop();}
+                }
             }
         };
-        timer.start();
     }
 
-    public void startGame(boolean cheats){
+    public void startGame(int character, boolean cheats){
+        backgrounds.clear();
+        walkables.clear();
+        creatures.clear();
+        projectiles.clear();
         this.gameIsRunning=true;
-        this.cam = new Camera(0,200);
-        this.backgrounds.add(new Room(null,'r',800,500,"sprites\\desert.png"));
-        for(int i=0;i<(objective/10)+1;i++) {
-            this.backgrounds.add(new Room(backgrounds.get(i), 'r', 800, 500, "sprites\\desert.png"));
+        this.cam = new Camera(-354,213);
+        backgrounds.add(new Room(null, 'r', this.cam, "desert.png"));
+        backgrounds.add(new Room(backgrounds.get(0), 'l', this.cam, "desert.png"));
+        for(int i=1;i<(objective/10)+2;i++){
+            backgrounds.add(new Room(backgrounds.get(i), 'r', this.cam, "desert.png"));
         }
-        this.terrains.add(new Terrain(500,320,100,20,false,"sprites\\platform.png"));
-        this.hero=new Hero(100,350,77,100,150,6,100,cheats,"sprites\\hero.png");
-        StaticThing energyBar = new StaticThing(278, 275, 44, 9, "sprites\\energy bar.png");
-        this.energy=new StaticThing(278,275,44,9,"sprites\\energy bar.png");
-        this.energy.setFrame(1);
-        for(int i=0;i<this.hero.getHealth();i++) {
-            this.liveCounter.add(new StaticThing(10*(i%5+1), 10*((i/5)+1),9,9, "sprites\\heart.png"));
+        walkables.add(new Platform(500,320,this.cam));
+        walkables.add(new Platform(800,250,this.cam));
+        walkables.add(new Obstacle(0,450,this.objective*80+100,1,this.cam,"invisible.png"));
+        walkables.add(new Obstacle(0,0,1,450,this.cam,"invisible.png"));
+
+        Shot shotListener=(projectile -> {
+            projectile.addRemovalListener(() -> {
+                projectiles.remove(projectile);
+                pane.getChildren().remove(projectile);
+            });
+            projectiles.add(projectile);
+            pane.getChildren().add(projectile);
+        });
+        for(int i=0;i<this.difficulty*5;i++){
+            AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350, true, this.cam);
+            foe.addShotListener(shotListener);
+            foe.addRemovalListener(() -> {
+                creatures.remove(foe);
+                pane.getChildren().remove(foe);
+            });
+            creatures.add(foe);
         }
+
+        player =character==0?new Hero(100,350,cheats?10:3,this.cam):new Gz_37(100,350,cheats?10:3,this.cam);
+        this.cam.setTarget(player);
+        player.addShotListener(shotListener);
+        creatures.add(player);
+
+        HeartMeter heartMeter=new HeartMeter(10,10,player);
+        EnergyBar energyBar=new EnergyBar(578,275,player);
 
         //putting images on window
         pane.getChildren().clear();
-        for(Room room:this.backgrounds){
-            pane.getChildren().add(room.getImage());
+        for(Room room:backgrounds){
+            pane.getChildren().add(room);
         }
-        for(Terrain terrain:this.terrains){
-            pane.getChildren().add(terrain.getImage());
+        for(Walkable terrain:walkables){
+            pane.getChildren().add(terrain);
         }
-        pane.getChildren().add(energyBar.getImage());
-        pane.getChildren().add(this.energy.getImage());
+        pane.getChildren().add(energyBar);
+        pane.getChildren().add(heartMeter);
         pane.getChildren().add(this.objectiveTracker);
-        this.generateNewFoes((int)(Math.random()*3)+1);
-        pane.getChildren().add(this.hero.getImage());
-        for(StaticThing life : this.liveCounter){
-            pane.getChildren().add(life.getImage());
-        }
+        /*this.generateNewFoes((int)(Math.random()*3)+1);*/
+        for(Creature creature:creatures){pane.getChildren().add(creature);}
 
         //keybindings
         this.setOnKeyPressed((event)->{
@@ -81,129 +120,66 @@ public class GameScene extends Scene {
                     listener.onMenuOpen();
                 }
             }
-            if (event.getCode()== KeyCode.SPACE) {
-                hero.jump();
-            }
-            if (event.getCode()== KeyCode.E) {
-                Projectile newProjectile=hero.attack();
-                if(newProjectile!=null) {
-                    pane.getChildren().add(newProjectile.getImage());
-                    allyProjectiles.add(newProjectile);
-                }
-            }
+            if (event.getCode()== KeyCode.SPACE) {player.jump();}
+            if (event.getCode()== KeyCode.A) {player.dash();}
+            if (event.getCode()== KeyCode.E) {player.shoot();}
             if (event.getCode()== KeyCode.Q) {
-                hero.walk();
+                player.faceLeft();
+                player.run();
             }
             if (event.getCode()== KeyCode.D) {
-                hero.sprint();
+                player.faceRight();
+                player.run();
             }
-            if (event.getCode()== KeyCode.S) {
-                hero.fall();
-            }
+            if (event.getCode()== KeyCode.S) { player.freeFall();}
         });
         this.setOnKeyReleased((event)->{
-            if (event.getCode()== KeyCode.Q) {
-                hero.run();
-            }
-            if (event.getCode()== KeyCode.D) {
-                hero.run();
-            }
-            if (event.getCode()== KeyCode.SPACE) {
-                hero.stopJumping();
-            }
+            if (event.getCode()== KeyCode.Q) {player.stop();}
+            if (event.getCode()== KeyCode.D) {player.stop();}
+            if (event.getCode()== KeyCode.SPACE) {player.stopJumping();}
+            if (event.getCode()== KeyCode.S) {player.stopFreeFall();}
         });
+
+        //mouse position tracking
+        this.setOnMouseMoved(event->{
+            xMousePos=(int)(event.getSceneX()+this.cam.getX());
+            yMousePos=(int)(event.getSceneY()+this.cam.getY());
+        });
+        this.timer.start();
     }
 
     private void endGame(long time){
         this.gameEndedAt=time;
         this.gameIsRunning=false;
         this.gameIsResettable=false;
-        this.liveCounter.clear();
-        this.backgrounds.clear();
-        this.foes.clear();
-        this.allyProjectiles.clear();
-        this.enemyProjectiles.clear();
+        backgrounds.clear();
+        walkables.clear();
+        creatures.clear();
+        projectiles.clear();
     }
 
     private void update(long time) {
-        this.hero.update(time,this.cam,this.terrains,this.foes,this.enemyProjectiles);
-
-        //generating new foes
-        if(this.cam.update(this.hero)){
-            this.generateNewFoes((int)(Math.random()*3)+1);
-        }
+        for(Creature creature:creatures){creature.update(time);}
+        this.cam.update();
 
         //Background update
-        for(Room room:this.backgrounds){
-            room.update(this.cam);
+        for(Room room:backgrounds){
+            room.update(time);
         }
 
         //game.Terrain update
-        for(Terrain terrain:this.terrains){
-            terrain.update(this.cam);
+        for(Walkable terrain:walkables){
+            terrain.update(time);
         }
 
         //updating projectiles and deleting when out of bounds
-        for(Projectile projectile : allyProjectiles){
-            if(projectile.update(time,this.cam)){
-                pane.getChildren().remove(projectile.getImage());
-                allyProjectiles.remove(projectile);
-                break;
-            }
-        }
-        for(Projectile projectile : enemyProjectiles){
-            if(projectile.update(time,this.cam)){
-                pane.getChildren().remove(projectile.getImage());
-                enemyProjectiles.remove(projectile);
-                break;
-            }
+        for(game.entities.Projectile projectile:projectiles){
+            projectile.update(time);
         }
 
-        //deleting out of bound foes
-        for(Foe foe : foes){
-            if(foe.getX()<-76){
-                pane.getChildren().remove(foe.getImage());
-                foes.remove(foe);
-                break;
-            }
-        }
+        this.objectiveTracker.setText("Parcourez "+this.objective+"m\n"+(player.getX()/80-1)+"/"+this.objective);
 
-        for(Foe foe : foes){
-            //randomly making foes attack
-            if(Math.random()<.01){
-                Projectile newProjectile = foe.attack(time);
-                if(newProjectile!=null) {
-                    pane.getChildren().add(newProjectile.getImage());
-                    enemyProjectiles.add(newProjectile);
-                }
-            }
-            //deleting foes and projectiles that are in contact
-            Projectile projectile=foe.update(time,this.cam,this.allyProjectiles);
-            if(projectile!=null&&projectile.isDeletable()){
-                pane.getChildren().remove(foe.getImage());
-                this.foes.remove(foe);
-                pane.getChildren().remove(projectile.getImage());
-                this.allyProjectiles.remove(projectile);
-                this.hero.heal(1);
-                break;
-            //creating new projectile when finished casting
-            }else if(projectile!=null){
-                pane.getChildren().add(projectile.getImage());
-                enemyProjectiles.add(projectile);
-            }
-        }
-        //displaying remaining health
-        for(int i=0;i<this.liveCounter.size();i++){
-            if(this.hero.getHealth()>i) {
-                this.liveCounter.get(i).setFrame(0);
-            }else{
-                this.liveCounter.get(i).setFrame(1);
-            }
-        }
-
-        this.objectiveTracker.setText("Parcourez "+this.objective+"m\n"+this.hero.getDistance()+"/"+this.objective);
-
-        if(this.hero.getHealth()<0){
+        if(player.getHealth()<0){
             Text text=new Text(200,100,"Défaite");
             text.setFont(Font.font("Verdana",40));
             text.setFill(Color.RED);
@@ -211,28 +187,21 @@ public class GameScene extends Scene {
             this.endGame(time);
         }
 
-        if(this.hero.getDistance()>=this.objective){
+        if(player.getX()/80-1>=this.objective){
             Text text=new Text(200,100,"Victoire");
             text.setFont(Font.font("Verdana",40));
             text.setFill(Color.GREEN);
             pane.getChildren().add(text);
-            this.objective=this.objective*5;
+            this.difficulty+=1;
             this.endGame(time);
         }
-        this.energy.setWidth(this.hero.getEnergy()+2);
-        //this.primaryStage.show();
     }
 
-    private void generateNewFoes(int amount) {
-        int[] pos={(int)(Math.random()*(950-150*amount)),(int)(Math.random()*(950-150*amount)),(int)(Math.random()*(950-150*amount))};
-        Arrays.sort(pos);
-        for(int newFoe=0;newFoe<amount;newFoe++){
-            foes.add(new Foe(this.hero.getX()+800+pos[newFoe]+150*newFoe));
-            pane.getChildren().add(foes.get(foes.size()-1).getImage());
-        }
-    }
-
-    public void addOpenMenuListener(OpenMenu listener){
-        this.openMenuListeners.add(listener);
-    }
+    public void addOpenMenuListener(OpenMenu listener){this.openMenuListeners.add(listener);}
+    public static ArrayList<Walkable> getWalkables(){return walkables;}
+    public static ArrayList<Creature> getCreatures(){return creatures;}
+    public static Player getPlayer(){return player;}
+    public static int getMouseX(){return xMousePos;}
+    public static int getMouseY(){return yMousePos;}
+    public static ArrayList<game.entities.Projectile> getProjectiles(){return projectiles;}
 }

@@ -1,5 +1,5 @@
 package menu;
 
 public interface StartGame {
-    void onGameStart(boolean cheats);
+    void onGameStart(int character, boolean cheats);
 }

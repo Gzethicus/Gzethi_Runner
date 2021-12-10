@@ -34,26 +34,4 @@ public class StaticThing {
         this.frame=frame;
         this.image.setViewport(new Rectangle2D(this.bWidth*this.frame, 0, this.width, this.height));
     }
-
-    public void setWidth(int width) {
-        this.width = width;
-        this.image.setViewport(new Rectangle2D(this.bWidth*this.frame, 0, this.width, this.height));
-    }
-
-
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public int getWidth(){
-        return this.width;
-    }
-
-    public int getHeight(){
-        return this.height;
-    }
 }

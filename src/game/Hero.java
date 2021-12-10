@@ -1,6 +1,8 @@
 package game;
 
+import game.environment.Walkable;
 import javafx.geometry.Rectangle2D;
+
 import java.util.ArrayList;
 
 public class Hero extends AnimatedThing {
@@ -13,7 +15,7 @@ public class Hero extends AnimatedThing {
     private long invulnStarted=0;
     private boolean isJumping=false;
     private boolean isGrounded = false;
-    private boolean isHardGrounded = false;
+    private boolean freeFall=false;
     private long jumpStarted=0;
     private final int maxHealth=3;
     private final boolean isCheated;
@@ -27,52 +29,38 @@ public class Hero extends AnimatedThing {
         this.maxFrames=new int[]{runningFrames,1,1,runningFrames,1,1,runningFrames};
         this.health=maxHealth;
     }
-    public void update(long time, Camera cam, ArrayList<Terrain> terrains, ArrayList<Foe> foes, ArrayList<Projectile> projectiles){
+    public void update(long time, Camera cam, ArrayList<Walkable> terrains){
         super.update(time,cam);
 
         //vertical speed
-        if (this.dY<350 || this.vY<0){
-            this.vY=Math.min(this.vY+.5,6);
-            this.isGrounded=false;
-        }else{
-            if(this.vY>0){this.resetFrame(time);}
-            this.vY=0;
-            this.dY=350;
-            this.isGrounded =true;
-            this.isHardGrounded=true;
-        }
+        this.vY=Math.min(this.vY+.5,6);
+        this.isGrounded=false;
 
         //terrain collision detection
-        for(Terrain terrain:terrains){
-            if(this.x+this.width>terrain.getX()
-            & this.x<terrain.getX()+terrain.getWidth()
-            &this.dY+this.height<=terrain.getY()
-            &this.dY+this.height+this.vY>terrain.getY()){
+        for(Walkable terrain:terrains){
+            Rectangle2D estHitBox=new Rectangle2D(this.dX+vX,this.dY+vY,this.width,this.height);
+            if(terrain.isBelow(this.hitBox)
+            & terrain.intersects(estHitBox)
+            & this.vY>0
+            & (!this.freeFall|terrain.isSolid())){
                 this.vY=0;
-                this.dY=terrain.getY()-this.height;
+                this.dY=terrain.getHitBox().getMinY()-this.height;
                 this.isGrounded=true;
-                this.isHardGrounded=terrain.isSolid();
-            }
+            } else
             if(terrain.isSolid()){
-                if(this.x+this.width>terrain.getX()
-                        & this.x<terrain.getX()+terrain.getWidth()
-                        & this.dY>=terrain.getY()+terrain.getHeight()
-                        & this.dY+this.vY<terrain.getY()+terrain.getHeight()) {
+                if(terrain.isAbove(this.hitBox)
+                & terrain.intersects(estHitBox)) {
                     this.vY=0;
-                    this.dY=terrain.getY()+terrain.getHeight();
-                }
-                if(this.y+this.height>terrain.getY()
-                        & this.y<terrain.getY()+terrain.getHeight()
-                        & this.dX+this.width<=terrain.getX()
-                        & this.dX+this.width+this.vX>terrain.getX()) {
-                    this.dX=terrain.getX()-this.width;
+                    this.dY=terrain.getHitBox().getMaxY();
+                }else
+                if(terrain.isRight(this.hitBox)
+                & terrain.intersects(estHitBox)) {
+                    this.dX=terrain.getHitBox().getMinX()-this.width;
                     this.vX=0;
-                }
-                if(this.y+this.height>terrain.getY()
-                        & this.y<terrain.getY()+terrain.getHeight()
-                        & this.dX>=terrain.getX()+terrain.getWidth()
-                        & this.dX+this.vX<terrain.getX()+terrain.getWidth()) {
-                    this.dX = terrain.getX() + terrain.getWidth();
+                }else
+                if(terrain.isLeft(this.hitBox)
+                & terrain.intersects(estHitBox)) {
+                    this.dX = terrain.getHitBox().getMaxX();
                     this.vX = 0;
                 }
             }
@@ -98,7 +86,7 @@ public class Hero extends AnimatedThing {
             }
             this.vY -= .4;
         }
-        this.hitBox=new Rectangle2D(this.x+25,this.y,this.width-50,this.height-30);
+        this.hitBox=new Rectangle2D(this.x+25,this.y,this.width-50,this.height);
 
         //attitude
         if(this.isGrounded){
@@ -114,76 +102,12 @@ public class Hero extends AnimatedThing {
         if(((time-this.invulnStarted)/150)%2==0&&(time-this.invulnStarted)<1000){this.attitude=6;}
         this.isAttacking-=1;
 
-        //hit detection from enemies
-        for (Foe foe : foes) {
-            if (this.getHitBox().intersects(foe.getHitBox())
-                    && (time-this.invulnStarted > 1000)) {
-                this.takeDamage(time);
-            }
-        }
-        //hit detection from projectiles
-        for (Projectile projectile : projectiles) {
-            if (this.getHitBox().intersects(projectile.getHitBox())
-                    && (time-this.invulnStarted > 1000)) {
-                this.takeDamage(time);
-            }
-        }
-
         //energy regeneration
         if(this.energy<40) {
             this.energy += (this.isCheated?.2:.02);
         }
     }
-
-    public void jump(){
-        if(this.isGrounded){
-            this.isJumping=true;
-        }
-    }
-
     public void stopJumping(){
         this.isJumping = false;
     }
-
-    public Projectile attack(){
-        if(this.isAttacking<2&&this.energy>=10) {
-            this.isAttacking = 20;
-            this.energy-=10;
-            return new Projectile(this.x + 76, this.y + 45, this.vX+10,0);
-        }
-        return null;
-    }
-
-    public void takeDamage(long time){
-        this.health -= 1;
-        this.invulnStarted = time;
-    }
-
-    public void heal(int healthRestored){
-        this.health = Math.min(this.maxHealth,this.health + healthRestored);
-    }
-
-    public void walk(){
-        this.vX=(this.isCheated?-5:2);
-        this.duration=225;
-    }
-    public void run(){
-        this.vX=(this.isCheated?0:3);
-        this.duration=150;
-    }
-    public void sprint(){
-        this.vX=5;
-        this.duration=90;
-    }
-    public void fall(){
-        if(this.isGrounded & !this.isHardGrounded){
-            this.dY+=.1;
-        }
-    }
-
-    public int getHealth() {return this.health;}
-
-    public int getEnergy(){return (int)this.energy;}
-
-    public int getDistance() {return (int)(this.dX/80)-1;}
 }
