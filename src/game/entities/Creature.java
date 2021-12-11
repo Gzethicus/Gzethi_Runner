@@ -12,8 +12,9 @@ public class Creature extends Entity{
     //status
     private int health;
     protected boolean isGrounded=true;
-    protected boolean isJumping=false;
-    private boolean dashing=false;
+    private boolean running=false;
+    private boolean walking=false;
+    private boolean autoRun=false;
     protected boolean freeFall=false;
     protected boolean isInvulnerable=false;
 
@@ -53,54 +54,19 @@ public class Creature extends Entity{
     }
 
     public void update(long time) {
+        //target speed
+        this.targetSpeed=(this.facingRight?1:-1)*(this.running?this.runSpeed:this.walking?this.walkSpeed:0);
+        this.running=this.autoRun;
+        this.walking=false;
 
         //vertical speed
         this.vY = Math.min(this.vY + .5, 6);
         boolean falling=true;
 
-        //jump handling
-        if (this.isJumping) {
-            if (isGrounded) {
-                this.jumpStarted = time;
-                this.isGrounded=false;
-                this.resetFrame(time);
-                this.vY = -7;
-            }
-            if (time - this.jumpStarted > this.jumpDuration) {
-                this.isJumping = false;
-            }
-            this.vY -= .4;
-        }
-
         //dash handling
-        if(this.dashing){
-            if (time-this.lastDashed>this.dashCooldown){
-                this.lastDashed=time;
-                //teleport dash
-                if(this.dashDuration<10){
-                    double displacement=(this.facingRight?1:-1)*this.dashDistance;
-                    this.dX+=displacement;
-                    Rectangle2D tpHitBox = new Rectangle2D(this.hitBox.getMinX()+Math.min(displacement,0), this.hitBox.getMinY(), this.hitBox.getWidth()+Math.abs(displacement), this.hitBox.getHeight());
-                    for (Walkable walkable : GameScene.getWalkables()){
-                        if (walkable.isSolid()) {
-                            if (walkable.isRight(this.hitBox)
-                                    & walkable.intersects(tpHitBox)) {
-                                this.dX = Math.min(walkable.getHitBox().getMinX() - (this.hitBox.getWidth() + this.xOffset),this.dX);
-                                this.hitAWall=1;
-                            } else if (walkable.isLeft(this.hitBox)
-                                    & walkable.intersects(tpHitBox)) {
-                                this.dX = Math.max(walkable.getHitBox().getMaxX() - this.xOffset,this.dX);
-                                this.hitAWall=-1;
-                            }
-                        }
-                    }
-                }
-                //regular dash
-                else this.dashSpeed=(this.facingRight?1:-1)*this.dashDistance*16/this.dashDuration;
-            }else if(time-this.lastDashed>this.dashDuration){
-                this.dashing=false;
+        if(this.dashSpeed!=0){
+            if(time-this.lastDashed>this.dashDuration){
                 this.dashSpeed=0;
-
             }
         }
 
@@ -136,6 +102,7 @@ public class Creature extends Entity{
         }
         if(this.isGrounded&falling){this.resetFrame(time);}
         this.isGrounded=!falling;
+        this.freeFall=false;
 
         super.update(time);
 
@@ -169,20 +136,51 @@ public class Creature extends Entity{
         if(this.health<=0){for(Removal listener:this.removalListener){listener.onRemoval();}}
     }
 
-    public void walk(){this.targetSpeed=this.facingRight?this.walkSpeed:-this.walkSpeed;}
+    public void jump(long time){
+        if(this.isGrounded){
+            this.jumpStarted=time;
+            this.vY=-7;
+        }else if(time-this.jumpStarted<this.jumpDuration){
+            this.vY-=.4;
+        }
+    }
 
-    public void run(){this.targetSpeed=this.facingRight?this.runSpeed:-this.runSpeed;}
+    public void dash(long time){
+        if(time-this.lastDashed>this.dashCooldown){
+            if(this.dashDuration<10){
+                double displacement=(this.facingRight?1:-1)*this.dashDistance;
+                this.dX+=displacement;
+                Rectangle2D tpHitBox = new Rectangle2D(this.hitBox.getMinX()+Math.min(displacement,0), this.hitBox.getMinY(), this.hitBox.getWidth()+Math.abs(displacement), this.hitBox.getHeight());
+                for (Walkable walkable : GameScene.getWalkables()){
+                    if (walkable.isSolid()) {
+                        if (walkable.isRight(this.hitBox)
+                                & walkable.intersects(tpHitBox)) {
+                            this.dX = Math.min(walkable.getHitBox().getMinX() - (this.hitBox.getWidth() + this.xOffset),this.dX);
+                            this.hitAWall=1;
+                        } else if (walkable.isLeft(this.hitBox)
+                                & walkable.intersects(tpHitBox)) {
+                            this.dX = Math.max(walkable.getHitBox().getMaxX() - this.xOffset,this.dX);
+                            this.hitAWall=-1;
+                        }
+                    }
+                }
+            }else{
+                this.dashSpeed=(this.facingRight?1:-1)*this.dashDistance*16/this.dashDuration;
+            }
+            this.lastDashed=time;
+        }
+    }
 
-    public void stop(){this.targetSpeed=0;}
+    public void walk(){this.walking=!this.running;}
 
+    public void run(){this.running=true;}
+
+    public void autoRun(){this.autoRun=true;}
+    public void stopAutoRun(){this.autoRun=false;}
     public void faceRight(){this.facingRight=true;}
     public void faceLeft(){this.facingRight=false;}
-    public void jump(){this.isJumping|=this.isGrounded;}
-    public void dash(){this.dashing = true;}
-    public void stopJumping(){this.isJumping = false;}
     public int getDamageOnContact(){return this.damageOnContact;}
     public void freeFall(){this.freeFall=true;}
-    public void stopFreeFall(){this.freeFall=false;}
     public int getHealth(){return this.health;}
     public int getMaxHealth(){return this.maxHealth;}
     public void addDamageListener(DamageTaken damageListener){this.damageListeners.add(damageListener);}

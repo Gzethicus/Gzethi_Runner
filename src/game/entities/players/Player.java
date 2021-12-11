@@ -47,16 +47,7 @@ public class Player extends Creature {
         }
 
         //attack handling
-        if(time>this.startedShooting +this.shootCooldown){
-            if(this.onCooldown&this.canShoot){
-                this.startedShooting =time;
-                this.canShoot =false;
-            }else{
-                canShoot =true;
-            }
-            this.onCooldown=false;
-        }
-        if(time>this.startedShooting +this.shootDuration){this.isShooting =false;}
+        if(time-this.startedShooting>this.shootDuration){this.isShooting =false;}
     }
 
     public void gainEnergy(int amount){
@@ -65,12 +56,11 @@ public class Player extends Creature {
         this.energy=newEnergy;
     }
 
-    public void shoot(){
-        if(!this.onCooldown&this.canShoot&this.energy>=10){
-            this.isShooting =true;
-            this.onCooldown=true;
+    public void shoot(long time){
+        if(time-this.startedShooting>this.shootCooldown&this.energy>=10){
+            this.startedShooting=time;
             this.gainEnergy(-10);
-            this.facingRight= GameScene.getMouseX()>(this.hitBox.getMinX()+this.hitBox.getMaxY())/2;
+            this.facingRight=GameScene.getMouseX()>(this.hitBox.getMinX()+this.hitBox.getMaxY())/2;
             Projectile projectile=new LaserProjectile(this.x+(facingRight?76:1), this.y+45, GameScene.getMouseX(),GameScene.getMouseY(),0, this.team, this.cam);
             for(Shot listener:shotListeners){listener.onShot(projectile);}
         }

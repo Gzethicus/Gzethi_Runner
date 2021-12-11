@@ -36,6 +36,7 @@ public class GameScene extends Scene {
     private static final ArrayList<Creature> creatures = new ArrayList<>();
     private static final ArrayList<GUI> gui = new ArrayList<>();
     private static final ArrayList<Projectile> projectiles = new ArrayList<>();
+    private final ArrayList<KeyCode> keyPresses=new ArrayList<>();
     private static int xMousePos=0;
     private static int yMousePos=0;
 
@@ -117,35 +118,27 @@ public class GameScene extends Scene {
         pane.getChildren().add(energyBar);
         pane.getChildren().add(heartMeter);
         pane.getChildren().add(this.objectiveTracker);
-        /*this.generateNewFoes((int)(Math.random()*3)+1);*/
         for(Creature creature:creatures){pane.getChildren().add(creature);}
 
-        //keybindings
+        //key tracking
         this.setOnKeyPressed((event)->{
             if(!gameIsRunning&gameIsResettable){
+                this.keyPresses.clear();
                 for(OpenMenu listener:openMenuListeners){
                     listener.onMenuOpen();
                 }
+            }else{
+                boolean isInList=false;
+                for(KeyCode keyCode:keyPresses){
+                    if(keyCode.equals(event.getCode())){
+                        isInList=true;
+                        break;
+                    }
+                }
+                if(!isInList){this.keyPresses.add(event.getCode());}
             }
-            if (event.getCode()== KeyCode.SPACE) {player.jump();}
-            if (event.getCode()== KeyCode.A) {player.dash();}
-            if (event.getCode()== KeyCode.E) {player.shoot();}
-            if (event.getCode()== KeyCode.Q) {
-                player.faceLeft();
-                player.run();
-            }
-            if (event.getCode()== KeyCode.D) {
-                player.faceRight();
-                player.run();
-            }
-            if (event.getCode()== KeyCode.S) { player.freeFall();}
         });
-        this.setOnKeyReleased((event)->{
-            if (event.getCode()== KeyCode.Q) {player.stop();}
-            if (event.getCode()== KeyCode.D) {player.stop();}
-            if (event.getCode()== KeyCode.SPACE) {player.stopJumping();}
-            if (event.getCode()== KeyCode.S) {player.stopFreeFall();}
-        });
+        this.setOnKeyReleased((event)->this.keyPresses.remove(event.getCode()));
 
         //mouse position tracking
         this.setOnMouseMoved(event->{
@@ -165,25 +158,35 @@ public class GameScene extends Scene {
         projectiles.clear();
     }
 
-    private void update(long time) {
+    private void update(long time){
+        //keybindings
+        for(KeyCode keyCode:keyPresses){
+            if(keyCode==KeyCode.SPACE){player.jump(time);}
+            if(keyCode==KeyCode.A){player.dash(time);}
+            if(keyCode==KeyCode.E){player.shoot(time);}
+            if(keyCode==KeyCode.Q){
+                player.faceLeft();
+                player.run();
+            }
+            if(keyCode==KeyCode.D){
+                player.faceRight();
+                player.run();
+            }
+            if(keyCode==KeyCode.S){player.freeFall();}
+        }
+
         for(Creature creature:creatures){creature.update(time);}
         for(GUI guiEl:gui){guiEl.update(time);}
         cam.update();
 
+        //updating projectiles
+        for(Projectile projectile:projectiles){projectile.update(time);}
+
         //Background update
-        for(Room room:backgrounds){
-            room.update(time);
-        }
+        for(Room room:backgrounds){room.update(time);}
 
-        //game.Terrain update
-        for(Walkable terrain:walkables){
-            terrain.update(time);
-        }
-
-        //updating projectiles and deleting when out of bounds
-        for(Projectile projectile:projectiles){
-            projectile.update(time);
-        }
+        //terrain update
+        for(Walkable terrain:walkables){terrain.update(time);}
 
         this.objectiveTracker.setText("Parcourez "+this.objective+"m\n"+(player.getX()/80-1)+"/"+this.objective);
 

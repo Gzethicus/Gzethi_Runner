@@ -115,12 +115,12 @@ public class MenuScene extends Scene {
         area1.setOnMouseEntered(evt-> {
             frame1.setState(2);
             conveyor1.setForcedSpeed(-5);
-            character1.run();
+            character1.autoRun();
         });
         area1.setOnMouseExited(evt-> {
             frame1.setState(this.character==0?2:0);
             conveyor1.setForcedSpeed(0);
-            character1.stop();
+            character1.stopAutoRun();
         });
         area1.setOnMouseClicked(evt->{
             this.character=0;
@@ -131,12 +131,12 @@ public class MenuScene extends Scene {
         area2.setOnMouseEntered(evt-> {
             frame2.setState(2);
             conveyor2.setForcedSpeed(-5);
-            character2.run();
+            character2.autoRun();
         });
         area2.setOnMouseExited(evt-> {
             frame2.setState(this.character==1?2:0);
             conveyor2.setForcedSpeed(0);
-            character2.stop();
+            character2.stopAutoRun();
         });
         area2.setOnMouseClicked(evt->{
             this.character=1;

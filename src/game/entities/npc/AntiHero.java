@@ -46,9 +46,7 @@ public class AntiHero extends Creature {
             if(!this.isShooting&Math.abs((playerHitBox.getMinX()+playerHitBox.getMaxX())/2-(this.hitBox.getMinX()+this.hitBox.getMaxX())/2)<300){
                 this.facingRight^=true;
                 this.run();
-            }else if(playerHitBox.getMaxY()-this.hitBox.getMaxY()<-100){this.jump();}
-            else if(playerHitBox.getMaxY()-this.hitBox.getMaxY()>0){this.stopJumping();}
-            else{this.stop();}
+            }else if(playerHitBox.getMaxY()-this.hitBox.getMaxY()<-100|(playerHitBox.getMaxY()-this.hitBox.getMaxY()<0&this.vY<0)){this.jump(time);}
         }
         else {
             //out of combat routine
@@ -58,7 +56,6 @@ public class AntiHero extends Creature {
                 this.nextPauseDuration=(long)(random()*3000);
             }else if(time-this.lastTurned>2000){
                 this.resetFrame(time);
-                this.stop();
             }else{this.walk();}
         }
         super.update(time);
