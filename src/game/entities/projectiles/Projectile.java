@@ -1,11 +1,15 @@
-package game.entities;
+package game.entities.projectiles;
 
 import game.Camera;
+import game.GameScene;
+import game.entities.Entity;
+import game.entities.Removal;
+import game.environment.Walkable;
 import javafx.geometry.Rectangle2D;
 
 import static java.lang.Math.*;
 
-public class Projectile extends Entity{
+public class Projectile extends Entity {
     private final int damage;
     private int piercing;
 
@@ -17,6 +21,18 @@ public class Projectile extends Entity{
         this.vY=A*(targetY-y);
         this.iv.setRotate(atan2(this.vY,this.targetSpeed)*180/PI);
         this.damage=damage;
+    }
+
+    public void update(long time){
+        super.update(time);
+
+        for(Walkable walkable:GameScene.getWalkables()){
+            if(walkable.isSolid()){
+                if(this.hitBox.intersects(walkable.getHitBox())){
+                    for(Removal listener:this.removalListener){listener.onRemoval();}
+                }
+            }
+        }
     }
 
     public int getDamage(){return this.damage;}

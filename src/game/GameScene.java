@@ -6,8 +6,10 @@ import game.entities.npc.AntiHero;
 import game.entities.players.Gz_37;
 import game.entities.players.Hero;
 import game.entities.players.Player;
+import game.entities.projectiles.Projectile;
 import game.environment.*;
 import game.gui.EnergyBar;
+import game.gui.GUI;
 import game.gui.HeartMeter;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
@@ -27,12 +29,13 @@ public class GameScene extends Scene {
     private Boolean gameIsResettable=false;
     long gameEndedAt=0;
 
-    private Camera cam;
+    private static Camera cam;
     private static Player player;
     private static final ArrayList<Room> backgrounds = new ArrayList<>();
     private static final ArrayList<Walkable> walkables = new ArrayList<>();
     private static final ArrayList<Creature> creatures = new ArrayList<>();
-    private static final ArrayList<game.entities.Projectile> projectiles = new ArrayList<>();
+    private static final ArrayList<GUI> gui = new ArrayList<>();
+    private static final ArrayList<Projectile> projectiles = new ArrayList<>();
     private static int xMousePos=0;
     private static int yMousePos=0;
 
@@ -62,16 +65,18 @@ public class GameScene extends Scene {
         creatures.clear();
         projectiles.clear();
         this.gameIsRunning=true;
-        this.cam = new Camera(-354,213);
-        backgrounds.add(new Room(null, 'r', this.cam, "desert.png"));
-        backgrounds.add(new Room(backgrounds.get(0), 'l', this.cam, "desert.png"));
+        cam = new Camera(-354,213);
+        backgrounds.add(new Room(null, 'r', cam, "desert.png"));
+        backgrounds.add(new Room(backgrounds.get(0), 'l', cam, "desert.png"));
         for(int i=1;i<(objective/10)+2;i++){
-            backgrounds.add(new Room(backgrounds.get(i), 'r', this.cam, "desert.png"));
+            backgrounds.add(new Room(backgrounds.get(i), 'r', cam, "desert.png"));
         }
-        walkables.add(new Platform(500,320,this.cam));
-        walkables.add(new Platform(800,250,this.cam));
-        walkables.add(new Obstacle(0,450,this.objective*80+100,1,this.cam,"invisible.png"));
-        walkables.add(new Obstacle(0,0,1,450,this.cam,"invisible.png"));
+        walkables.add(new Platform(500,320,cam));
+        walkables.add(new Platform(800,250,cam));
+        walkables.add(new Obstacle(0,450,this.objective*80+200,1,cam,"invisible.png"));
+        walkables.add(new Obstacle(0,-1,this.objective*80+200,1,cam,"invisible.png"));
+        walkables.add(new Obstacle(-1,0,1,450,cam,"invisible.png"));
+        walkables.add(new Obstacle(this.objective*80+200,0,1,450,cam,"invisible.png"));
 
         Shot shotListener=(projectile -> {
             projectile.addRemovalListener(() -> {
@@ -82,7 +87,7 @@ public class GameScene extends Scene {
             pane.getChildren().add(projectile);
         });
         for(int i=0;i<this.difficulty*5;i++){
-            AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350, true, this.cam);
+            AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350, true, cam);
             foe.addShotListener(shotListener);
             foe.addRemovalListener(() -> {
                 creatures.remove(foe);
@@ -91,13 +96,15 @@ public class GameScene extends Scene {
             creatures.add(foe);
         }
 
-        player =character==0?new Hero(100,350,cheats?10:3,this.cam):new Gz_37(100,350,cheats?10:3,this.cam);
-        this.cam.setTarget(player);
+        player =character==0?new Hero(100,350,cheats?10:3,cam):new Gz_37(100,350,cheats?10:3,cam);
+        cam.setTarget(player);
         player.addShotListener(shotListener);
         creatures.add(player);
 
         HeartMeter heartMeter=new HeartMeter(10,10,player);
-        EnergyBar energyBar=new EnergyBar(578,275,player);
+        EnergyBar energyBar = new EnergyBar(578, 275, player);
+        gui.add(heartMeter);
+        gui.add(energyBar);
 
         //putting images on window
         pane.getChildren().clear();
@@ -142,8 +149,8 @@ public class GameScene extends Scene {
 
         //mouse position tracking
         this.setOnMouseMoved(event->{
-            xMousePos=(int)(event.getSceneX()+this.cam.getX());
-            yMousePos=(int)(event.getSceneY()+this.cam.getY());
+            xMousePos=(int)(event.getSceneX());
+            yMousePos=(int)(event.getSceneY());
         });
         this.timer.start();
     }
@@ -160,7 +167,8 @@ public class GameScene extends Scene {
 
     private void update(long time) {
         for(Creature creature:creatures){creature.update(time);}
-        this.cam.update();
+        for(GUI guiEl:gui){guiEl.update(time);}
+        cam.update();
 
         //Background update
         for(Room room:backgrounds){
@@ -173,7 +181,7 @@ public class GameScene extends Scene {
         }
 
         //updating projectiles and deleting when out of bounds
-        for(game.entities.Projectile projectile:projectiles){
+        for(Projectile projectile:projectiles){
             projectile.update(time);
         }
 
@@ -201,7 +209,7 @@ public class GameScene extends Scene {
     public static ArrayList<Walkable> getWalkables(){return walkables;}
     public static ArrayList<Creature> getCreatures(){return creatures;}
     public static Player getPlayer(){return player;}
-    public static int getMouseX(){return xMousePos;}
-    public static int getMouseY(){return yMousePos;}
-    public static ArrayList<game.entities.Projectile> getProjectiles(){return projectiles;}
+    public static int getMouseX(){return xMousePos+cam.getX();}
+    public static int getMouseY(){return yMousePos+cam.getY();}
+    public static ArrayList<Projectile> getProjectiles(){return projectiles;}
 }

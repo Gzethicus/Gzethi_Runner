@@ -3,8 +3,8 @@ package game.entities.npc;
 import game.Camera;
 import game.GameScene;
 import game.entities.Creature;
-import game.entities.LaserProjectile;
-import game.entities.Projectile;
+import game.entities.projectiles.LaserProjectile;
+import game.entities.projectiles.Projectile;
 import game.entities.Shot;
 import javafx.geometry.Rectangle2D;
 
@@ -40,6 +40,7 @@ public class AntiHero extends Creature {
         this.seesPlayer=playerHitBox.intersects(new Rectangle2D(this.facingRight?this.x-50:this.x-700,0,750,500))
                 |(this.seesPlayer&playerHitBox.intersects(new Rectangle2D(this.x-1000,0,2000,500)));
         if(seesPlayer){
+            //combat routine
             this.facingRight=(playerHitBox.getMinX()+playerHitBox.getMaxX())/2-(this.hitBox.getMinX()+this.hitBox.getMaxX())/2>0;
             if(this.vX==this.forcedSpeed){this.shoot();}
             if(!this.isShooting&Math.abs((playerHitBox.getMinX()+playerHitBox.getMaxX())/2-(this.hitBox.getMinX()+this.hitBox.getMaxX())/2)<300){
@@ -50,7 +51,7 @@ public class AntiHero extends Creature {
             else{this.stop();}
         }
         else {
-            //doesn't see player routine
+            //out of combat routine
             if(time-this.lastTurned>2000+this.nextPauseDuration){
                 this.facingRight^=true;
                 this.lastTurned=time;

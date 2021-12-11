@@ -1,15 +1,15 @@
 package game.gui;
 
-import javafx.geometry.Rectangle2D;
-
 public class Energy extends GUIElement{
-
-
     public Energy(int x, int y){
         super(x,y,40,5,"energy.png");
+        int[]ph1={5};
+        long[]ph2={100};
+        this.maxFrame=ph1;
+        this.durations=ph2;
     }
 
     public void setEnergy(int width){
-        this.iv.setViewport(new Rectangle2D(this.bWidth*this.frame,this.bHeight*this.state,width,this.bHeight));
+        this.width=width;
     }
 }
