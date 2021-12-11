@@ -3,7 +3,7 @@ package game.gui;
 import game.entities.players.Player;
 import javafx.scene.Parent;
 
-public class HeartMeter extends Parent {
+public class HeartMeter extends Parent implements GUI {
     private final Heart[] hearts;
 
     public HeartMeter(int x, int y, Player player){
@@ -14,6 +14,12 @@ public class HeartMeter extends Parent {
             this.getChildren().add(this.hearts[heart]);
         }
         player.addDamageListener((before, after)->this.setHealth(after));
+    }
+
+    public void update(long time){
+        for(Heart heart:this.hearts){
+            heart.update(time);
+        }
     }
 
     public void setHealth(int health){

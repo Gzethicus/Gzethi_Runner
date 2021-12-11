@@ -3,8 +3,8 @@ package game.entities.players;
 import game.Camera;
 import game.GameScene;
 import game.entities.Creature;
-import game.entities.LaserProjectile;
-import game.entities.Projectile;
+import game.entities.projectiles.LaserProjectile;
+import game.entities.projectiles.Projectile;
 import game.entities.Shot;
 import javafx.geometry.Rectangle2D;
 

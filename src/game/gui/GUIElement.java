@@ -6,21 +6,22 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
 public class GUIElement extends Parent {
-    protected final int bWidth;
-    protected final int bHeight;
+    private final int bWidth;
+    private final int bHeight;
+    protected int width;
+    protected int height;
     protected final ImageView iv;
-    private final int[] maxFrames;
-    private final int[] durations;
+    protected int[] maxFrame;
+    protected long[] durations;
     protected int state;
     protected int frame;
-    private long frameStart;
+    private long timeOrigin;
 
     public GUIElement(int x, int y, int width, int height, String spriteName){
         this.bWidth=width;
         this.bHeight=height;
-        int[] ph={1};
-        this.maxFrames=ph;
-        this.durations=ph;
+        this.width=width;
+        this.height=height;
         this.frame=0;
         this.state=0;
         this.iv=new ImageView(new Image("sprites\\GUI\\"+spriteName));
@@ -31,17 +32,30 @@ public class GUIElement extends Parent {
     }
 
     public void update(long time){
-        if(time>this.frameStart+this.durations[this.state]){
-            this.frame=this.frame+1%this.maxFrames[this.state];
-            this.frameStart=time;
-            this.iv.setViewport(new Rectangle2D(this.bWidth*this.frame,this.bHeight*this.state,this.bWidth,this.bHeight));
+        if(time>this.timeOrigin +this.durations[this.state]){
+            this.frame=this.frame+1%this.maxFrame[this.state];
+            this.timeOrigin =time;
+            this.iv.setViewport(new Rectangle2D(this.bWidth*this.frame,this.bHeight*this.state,this.width,this.height));
+        }
+        if(this.frame>this.maxFrame[this.state]){this.resetFrame(time);}
+        this.iv.setViewport(new Rectangle2D(this.frame*this.bWidth,this.state*this.bHeight,this.width,this.height));
+        if(time>Math.max(this.timeOrigin+this.durations[this.state],this.durations[this.state])){
+            this.timeOrigin+=this.durations[this.state];
+            this.frame=(this.frame+1)%this.maxFrame[this.state];
+            if(this.timeOrigin==this.durations[this.state]){this.resetFrame(time);}
         }
     }
 
     public void setState(int state, boolean keepFrame){
         this.state=state;
-        this.iv.setViewport(new Rectangle2D(keepFrame?this.bWidth*this.frame:0,this.bHeight*this.state,this.bWidth,this.bHeight));
+        this.frame=keepFrame?this.frame:0;
+        this.iv.setViewport(new Rectangle2D(this.bWidth*this.frame,this.bHeight*this.state,this.bWidth,this.bHeight));
     }
 
     public void setState(int state){this.setState(state,false);}
+
+    private void resetFrame(long time){
+        this.frame=0;
+        this.timeOrigin=time;
+    }
 }

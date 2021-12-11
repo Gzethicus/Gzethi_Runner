@@ -34,7 +34,7 @@ public class WorldElement extends Parent {
         this.getChildren().add(this.iv);
     }
 
-    protected void update(long time){
+    public void update(long time){
         int relX=this.x-this.cam.getX();
         int relY=this.y-this.cam.getY();
         this.iv.setX(relX);

@@ -2,6 +2,7 @@ package game.entities;
 
 import game.Camera;
 import game.GameScene;
+import game.entities.projectiles.Projectile;
 import game.environment.Walkable;
 import javafx.geometry.Rectangle2D;
 
@@ -25,7 +26,7 @@ public class Creature extends Entity{
     private long jumpDuration;
     protected double dashDistance=0;
     protected long dashDuration=0;
-    protected long dashCooldown=2000;
+    protected long dashCooldown=1000;
     private int maxHealth;
     protected double walkSpeed;
     protected double runSpeed;
@@ -75,6 +76,7 @@ public class Creature extends Entity{
         if(this.dashing){
             if (time-this.lastDashed>this.dashCooldown){
                 this.lastDashed=time;
+                //teleport dash
                 if(this.dashDuration<10){
                     double displacement=(this.facingRight?1:-1)*this.dashDistance;
                     this.dX+=displacement;
@@ -93,6 +95,7 @@ public class Creature extends Entity{
                         }
                     }
                 }
+                //regular dash
                 else this.dashSpeed=(this.facingRight?1:-1)*this.dashDistance*16/this.dashDuration;
             }else if(time-this.lastDashed>this.dashDuration){
                 this.dashing=false;

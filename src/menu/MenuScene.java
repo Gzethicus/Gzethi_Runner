@@ -5,13 +5,15 @@ import game.GameScene;
 import game.entities.players.Gz_37;
 import game.entities.players.Hero;
 import game.entities.players.Player;
+import game.gui.CharacterFrame;
 import game.environment.Obstacle;
 import game.environment.Room;
+import game.gui.GUIElement;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import java.util.ArrayList;
-import game.StaticThing;
+
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
@@ -83,10 +85,10 @@ public class MenuScene extends Scene {
         text2.setTextAlignment(TextAlignment.CENTER);
         text2.setWrappingWidth(250);
 
-        StaticThing frame1=new StaticThing(150,50,200,250,"sprites\\characterFrame.png");
-        StaticThing frame2=new StaticThing(450,50,200,250,"sprites\\characterFrame.png");
-        frame1.setFrame(this.character==0?2:0);
-        frame2.setFrame(this.character==1?2:0);
+        CharacterFrame frame1=new CharacterFrame(150,50);
+        CharacterFrame frame2=new CharacterFrame(450,50);
+        frame1.setState(this.character==0?2:0);
+        frame2.setState(this.character==1?2:0);
 
         Player character1=new Hero(211,125,1,phCam);
         character1.setScaleX(2);
@@ -111,34 +113,34 @@ public class MenuScene extends Scene {
         Rectangle area1=new Rectangle(150,50,200,250);
         area1.setFill(Color.TRANSPARENT);
         area1.setOnMouseEntered(evt-> {
-            frame1.setFrame(2);
+            frame1.setState(2);
             conveyor1.setForcedSpeed(-5);
             character1.run();
         });
         area1.setOnMouseExited(evt-> {
-            frame1.setFrame(this.character==0?2:0);
+            frame1.setState(this.character==0?2:0);
             conveyor1.setForcedSpeed(0);
             character1.stop();
         });
         area1.setOnMouseClicked(evt->{
             this.character=0;
-            frame2.setFrame(0);
+            frame2.setState(0);
         });
         Rectangle area2=new Rectangle(450,50,200,250);
         area2.setFill(Color.TRANSPARENT);
         area2.setOnMouseEntered(evt-> {
-            frame2.setFrame(2);
+            frame2.setState(2);
             conveyor2.setForcedSpeed(-5);
             character2.run();
         });
         area2.setOnMouseExited(evt-> {
-            frame2.setFrame(this.character==1?2:0);
+            frame2.setState(this.character==1?2:0);
             conveyor2.setForcedSpeed(0);
             character2.stop();
         });
         area2.setOnMouseClicked(evt->{
             this.character=1;
-            frame1.setFrame(0);
+            frame1.setState(0);
         });
 
         Button back=new Button(575,325,200,50,"Back");
@@ -149,8 +151,8 @@ public class MenuScene extends Scene {
         pane.getChildren().add(text1);
         pane.getChildren().add(text2);
         pane.getChildren().add(back);
-        pane.getChildren().add(frame1.getImage());
-        pane.getChildren().add(frame2.getImage());
+        pane.getChildren().add(frame1);
+        pane.getChildren().add(frame2);
         pane.getChildren().add(character1);
         pane.getChildren().add(character2);
         pane.getChildren().add(area1);
@@ -161,11 +163,11 @@ public class MenuScene extends Scene {
         Button back=new Button(575,325,200,50,"Back");
         back.addButtonListener(this::optionsMenu);
 
-        StaticThing keyBinds=new StaticThing(212,75,375,205,"sprites\\keyBinds.png");
+        GUIElement keyBinds=new GUIElement(212,75,375,205,"sprites\\keyBinds.png");
 
         pane.getChildren().clear();
         pane.getChildren().add(this.background);
-        pane.getChildren().add(keyBinds.getImage());
+        pane.getChildren().add(keyBinds);
         pane.getChildren().add(back);
     }
 
