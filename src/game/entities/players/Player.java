@@ -61,7 +61,7 @@ public class Player extends Creature {
             this.startedShooting=time;
             this.gainEnergy(-10);
             this.facingRight=GameScene.getMouseX()>(this.hitBox.getMinX()+this.hitBox.getMaxY())/2;
-            Projectile projectile=new LaserProjectile(this.x+(facingRight?76:1), this.y+45, GameScene.getMouseX(),GameScene.getMouseY(),0, this.team, this.cam);
+            Projectile projectile=new LaserProjectile(this.x+(facingRight?76:1), this.y+45, (int)GameScene.getMouseX(),(int)GameScene.getMouseY(),0, this.team, this.cam);
             for(Shot listener:shotListeners){listener.onShot(projectile);}
         }
     }

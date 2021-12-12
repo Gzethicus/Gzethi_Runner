@@ -13,7 +13,7 @@ public class LoadingScene extends Scene {
 
     public LoadingScene(){
         super(pane,600,300);
-        Room background = new Room(null,'r',new Camera(0,100),"menu.png");
+        Room background = new Room(null,'r',new Camera(0,100, pane),"menu.png");
         pane.getChildren().add(background);
         pane.getChildren().add(this.logo);
         AnimationTimer loadingTimer = new AnimationTimer() {

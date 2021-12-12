@@ -15,14 +15,19 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
 import java.util.ArrayList;
 
+import static java.lang.Math.*;
+
 public class GameScene extends Scene {
-    private static final Pane pane = new Pane();
+    private static final StackPane pane = new StackPane();
+    private static final Pane worldPane = new Pane();
+    private static final Pane guiPane = new Pane();
     private final AnimationTimer timer;
 
     private Boolean gameIsRunning=false;
@@ -37,13 +42,15 @@ public class GameScene extends Scene {
     private static final ArrayList<GUI> gui = new ArrayList<>();
     private static final ArrayList<Projectile> projectiles = new ArrayList<>();
     private final ArrayList<KeyCode> keyPresses=new ArrayList<>();
-    private static int xMousePos=0;
-    private static int yMousePos=0;
+    private static double xMousePos=0;
+    private static double yMousePos=0;
 
     private final int objective=100;
     private int difficulty=3;
     private final Text objectiveTracker = new Text(10,100,"");
     private final ArrayList<OpenMenu> openMenuListeners=new ArrayList<>();
+
+    private long lastRotated=0;
 
     public GameScene() {
         super(pane,1400,300);
@@ -66,7 +73,7 @@ public class GameScene extends Scene {
         creatures.clear();
         projectiles.clear();
         this.gameIsRunning=true;
-        cam = new Camera(-354,213);
+        cam = new Camera(150,400,worldPane);
         backgrounds.add(new Room(null, 'r', cam, "desert.png"));
         backgrounds.add(new Room(backgrounds.get(0), 'l', cam, "desert.png"));
         for(int i=1;i<(objective/10)+2;i++){
@@ -82,17 +89,17 @@ public class GameScene extends Scene {
         Shot shotListener=(projectile -> {
             projectile.addRemovalListener(() -> {
                 projectiles.remove(projectile);
-                pane.getChildren().remove(projectile);
+                worldPane.getChildren().remove(projectile);
             });
             projectiles.add(projectile);
-            pane.getChildren().add(projectile);
+            worldPane.getChildren().add(projectile);
         });
         for(int i=0;i<this.difficulty*5;i++){
             AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350, true, cam);
             foe.addShotListener(shotListener);
             foe.addRemovalListener(() -> {
                 creatures.remove(foe);
-                pane.getChildren().remove(foe);
+                worldPane.getChildren().remove(foe);
             });
             creatures.add(foe);
         }
@@ -109,16 +116,20 @@ public class GameScene extends Scene {
 
         //putting images on window
         pane.getChildren().clear();
+        worldPane.getChildren().clear();
+        guiPane.getChildren().clear();
+        pane.getChildren().add(worldPane);
+        pane.getChildren().add(guiPane);
         for(Room room:backgrounds){
-            pane.getChildren().add(room);
+            worldPane.getChildren().add(room);
         }
         for(Walkable terrain:walkables){
-            pane.getChildren().add(terrain);
+            worldPane.getChildren().add(terrain);
         }
-        pane.getChildren().add(energyBar);
-        pane.getChildren().add(heartMeter);
-        pane.getChildren().add(this.objectiveTracker);
-        for(Creature creature:creatures){pane.getChildren().add(creature);}
+        guiPane.getChildren().add(energyBar);
+        guiPane.getChildren().add(heartMeter);
+        guiPane.getChildren().add(this.objectiveTracker);
+        for(Creature creature:creatures){worldPane.getChildren().add(creature);}
 
         //key tracking
         this.setOnKeyPressed((event)->{
@@ -142,8 +153,8 @@ public class GameScene extends Scene {
 
         //mouse position tracking
         this.setOnMouseMoved(event->{
-            xMousePos=(int)(event.getSceneX());
-            yMousePos=(int)(event.getSceneY());
+            xMousePos=event.getSceneX()-pane.getWidth()/2;
+            yMousePos=event.getSceneY()-pane.getHeight()/2;
         });
         this.timer.start();
     }
@@ -173,11 +184,35 @@ public class GameScene extends Scene {
                 player.run();
             }
             if(keyCode==KeyCode.S){player.freeFall();}
+            if(keyCode==KeyCode.J&time-this.lastRotated>200){
+                cam.rotate(time,0,1000);
+                this.lastRotated=time;
+            }
+            if(keyCode==KeyCode.U&time-this.lastRotated>200){
+                cam.rotate(time,60,1000);
+                this.lastRotated=time;
+            }
+            if(keyCode==KeyCode.Y&time-this.lastRotated>200){
+                cam.rotate(time,120,1000);
+                this.lastRotated=time;
+            }
+            if(keyCode==KeyCode.G&time-this.lastRotated>200){
+                cam.rotate(time,180,1000);
+                this.lastRotated=time;
+            }
+            if(keyCode==KeyCode.B&time-this.lastRotated>200){
+                cam.rotate(time,240,1000);
+                this.lastRotated=time;
+            }
+            if(keyCode==KeyCode.N&time-this.lastRotated>200){
+                cam.rotate(time,300,1000);
+                this.lastRotated=time;
+            }
         }
 
         for(Creature creature:creatures){creature.update(time);}
         for(GUI guiEl:gui){guiEl.update(time);}
-        cam.update();
+        cam.update(time);
 
         //updating projectiles
         for(Projectile projectile:projectiles){projectile.update(time);}
@@ -194,7 +229,7 @@ public class GameScene extends Scene {
             Text text=new Text(200,100,"Défaite");
             text.setFont(Font.font("Verdana",40));
             text.setFill(Color.RED);
-            pane.getChildren().add(text);
+            guiPane.getChildren().add(text);
             this.endGame(time);
         }
 
@@ -202,7 +237,7 @@ public class GameScene extends Scene {
             Text text=new Text(200,100,"Victoire");
             text.setFont(Font.font("Verdana",40));
             text.setFill(Color.GREEN);
-            pane.getChildren().add(text);
+            guiPane.getChildren().add(text);
             this.difficulty+=1;
             this.endGame(time);
         }
@@ -212,7 +247,13 @@ public class GameScene extends Scene {
     public static ArrayList<Walkable> getWalkables(){return walkables;}
     public static ArrayList<Creature> getCreatures(){return creatures;}
     public static Player getPlayer(){return player;}
-    public static int getMouseX(){return xMousePos+cam.getX();}
-    public static int getMouseY(){return yMousePos+cam.getY();}
+    public static double getMouseX(){
+        double angle=worldPane.getRotate()*PI/180;
+        return cam.getX()+xMousePos*cos(angle)+yMousePos*sin(angle);
+    }
+    public static double getMouseY(){
+        double angle=worldPane.getRotate()*PI/180;
+        return cam.getY()+yMousePos*cos(angle)-xMousePos*sin(angle);
+    }
     public static ArrayList<Projectile> getProjectiles(){return projectiles;}
 }

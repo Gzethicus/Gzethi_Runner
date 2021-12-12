@@ -22,7 +22,7 @@ import javafx.scene.text.TextAlignment;
 
 public class MenuScene extends Scene {
     private static final Pane pane = new Pane();
-    private final Room background=new Room(null,'r',new Camera(0,100),"menu.png");
+    private final Room background=new Room(null,'r',new Camera(0,100, pane),"menu.png");
     private final ArrayList<StartGame> startGameListeners=new ArrayList<>();
     private final ArrayList<CloseWindow> closeWindowListener=new ArrayList<>();
     private boolean cheats=false;
@@ -73,7 +73,7 @@ public class MenuScene extends Scene {
 
 
     private void charactersMenu() {
-        Camera phCam=new Camera(0,0);
+        Camera phCam=new Camera(0,0, pane);
         GameScene.getWalkables().clear();
 
         Text text1=new Text(150,45,"Hero");
@@ -163,7 +163,7 @@ public class MenuScene extends Scene {
         Button back=new Button(575,325,200,50,"Back");
         back.addButtonListener(this::optionsMenu);
 
-        GUIElement keyBinds=new GUIElement(212,75,375,205,"sprites\\keyBinds.png");
+        GUIElement keyBinds=new GUIElement(212,75,375,205,"keyBinds.png");
 
         pane.getChildren().clear();
         pane.getChildren().add(this.background);

@@ -25,20 +25,16 @@ public class WorldElement extends Parent {
         this.width=width;
         this.height=height;
         this.cam=cam;
-        int relX=x-cam.getX();
-        int relY=y-cam.getY();
         this.iv=new ImageView(new Image("sprites\\"+spritePath));
         this.iv.setViewport(new Rectangle2D(0,0,width,height));
-        this.iv.setX(relX);
-        this.iv.setY(relY);
+        this.iv.setX(this.x);
+        this.iv.setY(this.y);
         this.getChildren().add(this.iv);
     }
 
     public void update(long time){
-        int relX=this.x-this.cam.getX();
-        int relY=this.y-this.cam.getY();
-        this.iv.setX(relX);
-        this.iv.setY(relY);
+        this.iv.setX(this.x);
+        this.iv.setY(this.y);
         if(this.frame>this.maxFrame[this.state]){this.resetFrame(time);}
         this.iv.setViewport(new Rectangle2D(this.frame*this.width,this.state*this.height,this.width,this.height));
         if(time>Math.max(this.timeOrigin+this.durations[this.state],this.durations[this.state])){
