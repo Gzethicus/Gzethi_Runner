@@ -133,7 +133,10 @@ public class Creature extends Entity{
         this.health-=amount;
         this.invulnStarted=time;
         for(DamageTaken listener:this.damageListeners){listener.onDamageTaken(this.health+amount,this.health);}
-        if(this.health<=0){for(Removal listener:this.removalListener){listener.onRemoval();}}
+        if(this.health<=0){
+            GameScene.requestDelete(this);
+            for(Removal listener:this.removalListener){listener.onRemoval();}
+        }
     }
 
     public void jump(long time){
@@ -172,9 +175,7 @@ public class Creature extends Entity{
     }
 
     public void walk(){this.walking=!this.running;}
-
     public void run(){this.running=true;}
-
     public void autoRun(){this.autoRun=true;}
     public void stopAutoRun(){this.autoRun=false;}
     public void faceRight(){this.facingRight=true;}

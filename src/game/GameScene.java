@@ -41,6 +41,7 @@ public class GameScene extends Scene {
     private static final ArrayList<Creature> creatures = new ArrayList<>();
     private static final ArrayList<GUI> gui = new ArrayList<>();
     private static final ArrayList<Projectile> projectiles = new ArrayList<>();
+    private static final ArrayList<WorldElement> deletionList = new ArrayList<>();
     private final ArrayList<KeyCode> keyPresses=new ArrayList<>();
     private static double xMousePos=0;
     private static double yMousePos=0;
@@ -53,7 +54,7 @@ public class GameScene extends Scene {
     private long lastRotated=0;
 
     public GameScene() {
-        super(pane,1400,300);
+        super(pane,1400,500);
         this.timer = new AnimationTimer() {
             @Override
             public void handle(long time) {
@@ -76,7 +77,7 @@ public class GameScene extends Scene {
         cam = new Camera(150,400,worldPane);
         backgrounds.add(new Room(null, 'r', cam, "desert.png"));
         backgrounds.add(new Room(backgrounds.get(0), 'l', cam, "desert.png"));
-        for(int i=1;i<(objective/10)+2;i++){
+        for(int i=1;i<(objective/10)+3;i++){
             backgrounds.add(new Room(backgrounds.get(i), 'r', cam, "desert.png"));
         }
         walkables.add(new Platform(500,320,cam));
@@ -87,30 +88,22 @@ public class GameScene extends Scene {
         walkables.add(new Obstacle(this.objective*80+200,0,1,450,cam,"invisible.png"));
 
         Shot shotListener=(projectile -> {
-            projectile.addRemovalListener(() -> {
-                projectiles.remove(projectile);
-                worldPane.getChildren().remove(projectile);
-            });
             projectiles.add(projectile);
             worldPane.getChildren().add(projectile);
         });
         for(int i=0;i<this.difficulty*5;i++){
             AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350, true, cam);
             foe.addShotListener(shotListener);
-            foe.addRemovalListener(() -> {
-                creatures.remove(foe);
-                worldPane.getChildren().remove(foe);
-            });
             creatures.add(foe);
         }
 
-        player =character==0?new Hero(100,350,cheats?10:3,cam):new Gz_37(100,350,cheats?10:3,cam);
+        player =character==0?new Hero(100,350,cheats?10:4,cam):new Gz_37(100,350,cheats?10:3,cam);
         cam.setTarget(player);
         player.addShotListener(shotListener);
         creatures.add(player);
 
-        HeartMeter heartMeter=new HeartMeter(10,10,player);
-        EnergyBar energyBar = new EnergyBar(578, 275, player);
+        HeartMeter heartMeter=new HeartMeter(10, 10, player);
+        EnergyBar energyBar=new EnergyBar((int)guiPane.getWidth()/2-22, (int)guiPane.getHeight()-20, player);
         gui.add(heartMeter);
         gui.add(energyBar);
 
@@ -156,6 +149,16 @@ public class GameScene extends Scene {
             xMousePos=event.getSceneX()-pane.getWidth()/2;
             yMousePos=event.getSceneY()-pane.getHeight()/2;
         });
+
+        //UI position handling
+        guiPane.widthProperty().addListener((obs,oldVal,newVal)-> {
+            gui.get(0).setX(10);
+            gui.get(1).setX(newVal.intValue() / 2 - 22);
+        });
+        guiPane.heightProperty().addListener((obs,oldVal,newVal)-> {
+            gui.get(0).setY(10);
+            gui.get(1).setY(newVal.intValue() - 20);
+        });
         this.timer.start();
     }
 
@@ -167,6 +170,9 @@ public class GameScene extends Scene {
         walkables.clear();
         creatures.clear();
         projectiles.clear();
+        gui.clear();
+        deletionList.clear();
+        keyPresses.clear();
     }
 
     private void update(long time){
@@ -217,6 +223,9 @@ public class GameScene extends Scene {
         //updating projectiles
         for(Projectile projectile:projectiles){projectile.update(time);}
 
+        for(WorldElement toBeDeleted:deletionList){this.delete(toBeDeleted);}
+        deletionList.clear();
+
         //Background update
         for(Room room:backgrounds){room.update(time);}
 
@@ -225,7 +234,7 @@ public class GameScene extends Scene {
 
         this.objectiveTracker.setText("Parcourez "+this.objective+"m\n"+(player.getX()/80-1)+"/"+this.objective);
 
-        if(player.getHealth()<0){
+        if(player.getHealth()<=0){
             Text text=new Text(200,100,"Défaite");
             text.setFont(Font.font("Verdana",40));
             text.setFill(Color.RED);
@@ -243,10 +252,17 @@ public class GameScene extends Scene {
         }
     }
 
-    public void addOpenMenuListener(OpenMenu listener){this.openMenuListeners.add(listener);}
-    public static ArrayList<Walkable> getWalkables(){return walkables;}
-    public static ArrayList<Creature> getCreatures(){return creatures;}
-    public static Player getPlayer(){return player;}
+    private void delete(WorldElement toBeDeleted){
+        worldPane.getChildren().remove(toBeDeleted);
+        if(Creature.class.isAssignableFrom(toBeDeleted.getClass())){
+            creatures.remove(toBeDeleted);
+        }else if(Projectile.class.isAssignableFrom(toBeDeleted.getClass())){
+            projectiles.remove(toBeDeleted);
+        }else{
+            System.out.println("Can't process deletion!");
+        }
+    }
+
     public static double getMouseX(){
         double angle=worldPane.getRotate()*PI/180;
         return cam.getX()+xMousePos*cos(angle)+yMousePos*sin(angle);
@@ -255,5 +271,11 @@ public class GameScene extends Scene {
         double angle=worldPane.getRotate()*PI/180;
         return cam.getY()+yMousePos*cos(angle)-xMousePos*sin(angle);
     }
+
+    public void addOpenMenuListener(OpenMenu listener){this.openMenuListeners.add(listener);}
+    public static ArrayList<Walkable> getWalkables(){return walkables;}
+    public static ArrayList<Creature> getCreatures(){return creatures;}
+    public static Player getPlayer(){return player;}
     public static ArrayList<Projectile> getProjectiles(){return projectiles;}
+    public static void requestDelete(WorldElement toBeDeleted){deletionList.add(toBeDeleted);}
 }

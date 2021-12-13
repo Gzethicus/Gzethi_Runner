@@ -55,5 +55,4 @@ public class Entity extends WorldElement {
     public int getX(){return this.x;}
     public int getY(){return this.y;}
     public void addRemovalListener(Removal listener){this.removalListener.add(listener);}
-    public boolean isFacingRight(){return this.facingRight;}
 }

@@ -31,7 +31,7 @@ public class Player extends Creature {
     private final ArrayList<EnergyChanged> energyListeners=new ArrayList<>();
 
     public Player(int x, int y, int width, int height, int health, Rectangle2D hitBox, Camera cam, String spriteSheet) {
-        super(x, y, width, height, true, 2, 5, 300, health, 3, 1,
+        super(x, y, width, height, true, 2, 5, 300, health, 4, 1,
                 0, 1000, 1, hitBox, cam,"players\\"+spriteSheet);
         this.dashDistance=250;
         this.dashDuration=150;

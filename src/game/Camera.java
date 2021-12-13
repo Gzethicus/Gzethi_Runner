@@ -17,6 +17,7 @@ public class Camera {
     private long rotationDuration;
     private double rotationTarget;
     private double lastRotationValue;
+    private double continuousRotationSpeed;
 
 
     public Camera(int x, int y, Pane worldPane){
@@ -39,11 +40,11 @@ public class Camera {
         this.vY=this.vY+a*0.01;
         this.y=(this.y+vY*0.1);
 
-        if(worldPane.getRotate()!=this.rotationTarget){
+        if(worldPane.getRotate()!=this.rotationTarget|this.continuousRotationSpeed!=0){
             if(time-this.rotationStarted<this.rotationDuration) {
                 worldPane.setRotate(this.lastRotationValue+(this.rotationTarget - this.lastRotationValue)*pow(sin(((time-this.rotationStarted)*PI)/(this.rotationDuration*2.)),2));
             }else{
-                worldPane.setRotate(this.rotationTarget);
+                worldPane.setRotate(this.rotationTarget+(time-this.rotationStarted-this.rotationDuration)*this.continuousRotationSpeed);
             }
         }
         double angle=worldPane.getRotate()*PI/180;
@@ -60,6 +61,8 @@ public class Camera {
         this.rotationStarted=time;
         this.rotationDuration=transitionTime;
     }
+
+    public void setContinuousRotation(double speed){this.continuousRotationSpeed=speed/1000;}
 
     public double getX(){return(x);}
     public double getY(){return(y);}
