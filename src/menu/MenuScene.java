@@ -1,14 +1,7 @@
 package menu;
 
-import game.Camera;
-import game.GameScene;
-import game.entities.players.Gz_37;
-import game.entities.players.Hero;
-import game.entities.players.Player;
-import game.gui.CharacterFrame;
-import game.environment.Obstacle;
-import game.environment.Room;
-import game.gui.GUIElement;
+import game.AnimatedSprite;
+import game.gui.Sprites;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -22,11 +15,11 @@ import javafx.scene.text.TextAlignment;
 
 public class MenuScene extends Scene {
     private static final Pane pane = new Pane();
-    private final Room background=new Room(null,'r',new Camera(0,100, pane),"menu.png");
+    private final AnimatedSprite background=game.environment.rooms.Sprites.MENU.get();
     private final ArrayList<StartGame> startGameListeners=new ArrayList<>();
     private final ArrayList<CloseWindow> closeWindowListener=new ArrayList<>();
     private boolean cheats=false;
-    private int character=0;
+    private int character=1;
 
     public MenuScene(){super(pane,800,400);}
 
@@ -73,8 +66,6 @@ public class MenuScene extends Scene {
 
 
     private void charactersMenu() {
-        Camera phCam=new Camera(0,0, pane);
-        GameScene.getWalkables().clear();
 
         Text text1=new Text(150,45,"Hero");
         text1.setFont(Font.font("Verdana",40));
@@ -85,62 +76,61 @@ public class MenuScene extends Scene {
         text2.setTextAlignment(TextAlignment.CENTER);
         text2.setWrappingWidth(250);
 
-        CharacterFrame frame1=new CharacterFrame(150,50);
-        CharacterFrame frame2=new CharacterFrame(450,50);
-        frame1.setState(this.character==0?2:0);
-        frame2.setState(this.character==1?2:0);
+        AnimatedSprite frame0= Sprites.FRAME.get(150,50);
+        AnimatedSprite frame1= Sprites.FRAME.get(450,50);
+        frame0.setDefaultAnimation(this.character==0?2:0);
+        frame1.setDefaultAnimation(this.character==1?2:0);
 
-        Player character1=new Hero(211,125,1,phCam);
-        character1.setScaleX(2);
-        character1.setScaleY(2);
-        Obstacle conveyor1=new Obstacle(150,225,200,1,phCam,"invisible.png");
-        GameScene.getWalkables().add(conveyor1);
-        Player character2=new Gz_37(509,125,1,phCam);
-        character2.setScaleX(2);
-        character2.setScaleY(2);
-        Obstacle conveyor2=new Obstacle(450,225,200,1,phCam,"invisible.png");
-        GameScene.getWalkables().add(conveyor2);
+
+        AnimatedSprite character0= game.entities.players.Sprites.HERO.get();
+        character0.setPreserveRatio(true);
+        character0.setFitHeight(200);
+        character0.setTranslateX(250-character0.getBoundsInLocal().getWidth()/2);
+        character0.setTranslateY(75);
+        character0.setMouseTransparent(true);
+
+        AnimatedSprite character1=game.entities.players.Sprites.GZ_37.get();
+        character1.setPreserveRatio(true);
+        character1.setFitHeight(200);
+        character1.setTranslateX(550-character1.getBoundsInLocal().getWidth()/2);
+        character1.setTranslateY(75);
+        character1.setMouseTransparent(true);
 
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long time) {
+                character0.update(time/1000000);
                 character1.update(time/1000000);
-                character2.update(time/1000000);
+                frame0.update(time/1000000);
+                frame1.update(time/1000000);
             }
         };
         timer.start();
 
-        Rectangle area1=new Rectangle(150,50,200,250);
-        area1.setFill(Color.TRANSPARENT);
-        area1.setOnMouseEntered(evt-> {
-            frame1.setState(2);
-            conveyor1.setForcedSpeed(-5);
-            character1.autoRun();
+        frame0.setOnMouseEntered(evt-> {
+            frame0.setDefaultAnimation(2);
+            character0.setDefaultAnimation(1);
         });
-        area1.setOnMouseExited(evt-> {
-            frame1.setState(this.character==0?2:0);
-            conveyor1.setForcedSpeed(0);
-            character1.stopAutoRun();
+        frame0.setOnMouseExited(evt-> {
+            frame0.setDefaultAnimation(this.character==0?2:0);
+            character0.setDefaultAnimation(0);
         });
-        area1.setOnMouseClicked(evt->{
+        frame0.setOnMouseClicked(evt->{
             this.character=0;
-            frame2.setState(0);
+            frame1.setDefaultAnimation(0);
         });
-        Rectangle area2=new Rectangle(450,50,200,250);
-        area2.setFill(Color.TRANSPARENT);
-        area2.setOnMouseEntered(evt-> {
-            frame2.setState(2);
-            conveyor2.setForcedSpeed(-5);
-            character2.autoRun();
+
+        frame1.setOnMouseEntered(evt-> {
+            frame1.setDefaultAnimation(2);
+            character1.setDefaultAnimation(1);
         });
-        area2.setOnMouseExited(evt-> {
-            frame2.setState(this.character==1?2:0);
-            conveyor2.setForcedSpeed(0);
-            character2.stopAutoRun();
+        frame1.setOnMouseExited(evt-> {
+            frame1.setDefaultAnimation(this.character==1?2:0);
+            character1.setDefaultAnimation(0);
         });
-        area2.setOnMouseClicked(evt->{
+        frame1.setOnMouseClicked(evt->{
             this.character=1;
-            frame1.setState(0);
+            frame0.setDefaultAnimation(0);
         });
 
         Button back=new Button(575,325,200,50,"Back");
@@ -151,19 +141,17 @@ public class MenuScene extends Scene {
         pane.getChildren().add(text1);
         pane.getChildren().add(text2);
         pane.getChildren().add(back);
+        pane.getChildren().add(frame0);
         pane.getChildren().add(frame1);
-        pane.getChildren().add(frame2);
+        pane.getChildren().add(character0);
         pane.getChildren().add(character1);
-        pane.getChildren().add(character2);
-        pane.getChildren().add(area1);
-        pane.getChildren().add(area2);
     }
 
     private void keyBindingMenu() {
         Button back=new Button(575,325,200,50,"Back");
         back.addButtonListener(this::optionsMenu);
 
-        GUIElement keyBinds=new GUIElement(212,75,375,205,"keyBinds.png");
+        AnimatedSprite keyBinds= game.gui.Sprites.KEYBINDS.get(212,75);
 
         pane.getChildren().clear();
         pane.getChildren().add(this.background);
@@ -171,11 +159,6 @@ public class MenuScene extends Scene {
         pane.getChildren().add(back);
     }
 
-    public void addStartGameListener(StartGame listener){
-        this.startGameListeners.add(listener);
-    }
-
-    public void addCloseWindowListener(CloseWindow listener){
-        this.closeWindowListener.add(listener);
-    }
+    public void addStartGameListener(StartGame listener){this.startGameListeners.add(listener);}
+    public void addCloseWindowListener(CloseWindow listener){this.closeWindowListener.add(listener);}
 }

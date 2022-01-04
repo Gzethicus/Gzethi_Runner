@@ -1,16 +1,15 @@
 package game;
 
-import game.entities.Creature;
-import game.entities.Shot;
-import game.entities.npc.AntiHero;
-import game.entities.players.Gz_37;
-import game.entities.players.Hero;
-import game.entities.players.Player;
-import game.entities.projectiles.Projectile;
+import game.entities.*;
+import game.entities.npc.*;
+import game.entities.players.*;
+import game.entities.projectiles.*;
 import game.environment.*;
-import game.gui.EnergyBar;
-import game.gui.GUI;
-import game.gui.HeartMeter;
+import game.environment.obstacles.*;
+import game.environment.obstacles.Sprites;
+import game.environment.platforms.*;
+import game.environment.rooms.*;
+import game.gui.*;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
@@ -26,9 +25,11 @@ import static java.lang.Math.*;
 
 public class GameScene extends Scene {
     private static final StackPane pane = new StackPane();
+    private static final Pane spacePane = new Pane();
     private static final Pane worldPane = new Pane();
     private static final Pane guiPane = new Pane();
     private final AnimationTimer timer;
+    private static final double pixelToMeter=80;
 
     private Boolean gameIsRunning=false;
     private Boolean gameIsResettable=false;
@@ -36,6 +37,7 @@ public class GameScene extends Scene {
 
     private static Camera cam;
     private static Player player;
+    private static final Space space=new Space();
     private static final ArrayList<Room> backgrounds = new ArrayList<>();
     private static final ArrayList<Walkable> walkables = new ArrayList<>();
     private static final ArrayList<Creature> creatures = new ArrayList<>();
@@ -56,7 +58,6 @@ public class GameScene extends Scene {
     public GameScene() {
         super(pane,1400,500);
         this.timer = new AnimationTimer() {
-            @Override
             public void handle(long time) {
                 if (gameIsRunning) {
                     update(time / 1000000);
@@ -75,44 +76,52 @@ public class GameScene extends Scene {
         projectiles.clear();
         this.gameIsRunning=true;
         cam = new Camera(150,400,worldPane);
-        backgrounds.add(new Room(null, 'r', cam, "desert.png"));
-        backgrounds.add(new Room(backgrounds.get(0), 'l', cam, "desert.png"));
+        backgrounds.add(new Room(-800, 0, game.environment.rooms.Sprites.DESERT.get()));
+        backgrounds.add(new Room(0, 0, game.environment.rooms.Sprites.DESERT.get()));
+        backgrounds.get(0).setNeighbour(backgrounds.get(1),1,0);
+        backgrounds.get(0).setNeighbour(space,0,0);
         for(int i=1;i<(objective/10)+3;i++){
-            backgrounds.add(new Room(backgrounds.get(i), 'r', cam, "desert.png"));
+            backgrounds.add(new Room(800*i, 0, game.environment.rooms.Sprites.DESERT.get()));
+            backgrounds.get(i+1).setNeighbour(backgrounds.get(i),0,1);
         }
-        walkables.add(new Platform(500,320,cam));
-        walkables.add(new Platform(800,250,cam));
-        walkables.add(new Obstacle(0,450,this.objective*80+200,1,cam,"invisible.png"));
-        walkables.add(new Obstacle(0,-1,this.objective*80+200,1,cam,"invisible.png"));
-        walkables.add(new Obstacle(-1,0,1,450,cam,"invisible.png"));
-        walkables.add(new Obstacle(this.objective*80+200,0,1,450,cam,"invisible.png"));
+        backgrounds.get(backgrounds.size()-1).setNeighbour(space,1,0);
+        walkables.add(new Platform(500,320));
+        walkables.add(new Platform(800,250));
+        walkables.add(new Obstacle(0,450,this.objective*80+200,1, Sprites.INVISIBLE.get()));
+        walkables.add(new Obstacle(0,-1,this.objective*80+200,1,Sprites.INVISIBLE.get()));
+        walkables.add(new Obstacle(-1,0,1,450,Sprites.INVISIBLE.get()));
+        //walkables.add(new Obstacle(800,350,1,100,Sprites.INVISIBLE.get()));       //tester's wall
+        walkables.add(new Obstacle(this.objective*80+200,0,1,450,Sprites.INVISIBLE.get()));
 
         Shot shotListener=(projectile -> {
             projectiles.add(projectile);
             worldPane.getChildren().add(projectile);
         });
-        for(int i=0;i<this.difficulty*5;i++){
-            AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350, true, cam);
+        /*for(int i=0;i<this.difficulty*5;i++){
+            AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350,backgrounds.get(2),false);
             foe.addShotListener(shotListener);
             creatures.add(foe);
-        }
+        }*/
 
-        player =character==0?new Hero(100,350,cheats?10:4,cam):new Gz_37(100,350,cheats?10:3,cam);
+        player =character==0?new Hero(100,350, backgrounds.get(0),cheats?10:4):new game.entities.assembly.constructed.Gz_37(100,315, backgrounds.get(0),cheats?10:4);
         cam.setTarget(player);
         player.addShotListener(shotListener);
         creatures.add(player);
 
         HeartMeter heartMeter=new HeartMeter(10, 10, player);
-        EnergyBar energyBar=new EnergyBar((int)guiPane.getWidth()/2-22, (int)guiPane.getHeight()-20, player);
+        EnergyBar energyBar=new EnergyBar(guiPane.getWidth()/2-22, guiPane.getHeight()-20, player);
         gui.add(heartMeter);
         gui.add(energyBar);
 
         //putting images on window
         pane.getChildren().clear();
+        spacePane.getChildren().clear();
         worldPane.getChildren().clear();
         guiPane.getChildren().clear();
+        pane.getChildren().add(spacePane);
         pane.getChildren().add(worldPane);
         pane.getChildren().add(guiPane);
+        spacePane.getChildren().add(space);
         for(Room room:backgrounds){
             worldPane.getChildren().add(room);
         }
@@ -179,38 +188,32 @@ public class GameScene extends Scene {
         //keybindings
         for(KeyCode keyCode:keyPresses){
             if(keyCode==KeyCode.SPACE){player.jump(time);}
-            if(keyCode==KeyCode.A){player.dash(time);}
-            if(keyCode==KeyCode.E){player.shoot(time);}
-            if(keyCode==KeyCode.Q){
-                player.faceLeft();
-                player.run();
-            }
-            if(keyCode==KeyCode.D){
-                player.faceRight();
-                player.run();
-            }
-            if(keyCode==KeyCode.S){player.freeFall();}
-            if(keyCode==KeyCode.J&time-this.lastRotated>200){
+            else if(keyCode==KeyCode.A){player.dash(time);}
+            else if(keyCode==KeyCode.E){player.shoot(time);}
+            else if(keyCode==KeyCode.Q){player.run(false);}
+            else if(keyCode==KeyCode.D){player.run(true);}
+            else if(keyCode==KeyCode.S){player.freeFall();}
+            else if(keyCode==KeyCode.J&time-this.lastRotated>200){
                 cam.rotate(time,0,1000);
                 this.lastRotated=time;
             }
-            if(keyCode==KeyCode.U&time-this.lastRotated>200){
+            else if(keyCode==KeyCode.U&time-this.lastRotated>200){
                 cam.rotate(time,60,1000);
                 this.lastRotated=time;
             }
-            if(keyCode==KeyCode.Y&time-this.lastRotated>200){
+            else if(keyCode==KeyCode.Y&time-this.lastRotated>200){
                 cam.rotate(time,120,1000);
                 this.lastRotated=time;
             }
-            if(keyCode==KeyCode.G&time-this.lastRotated>200){
+            else if(keyCode==KeyCode.G&time-this.lastRotated>200){
                 cam.rotate(time,180,1000);
                 this.lastRotated=time;
             }
-            if(keyCode==KeyCode.B&time-this.lastRotated>200){
+            else if(keyCode==KeyCode.B&time-this.lastRotated>200){
                 cam.rotate(time,240,1000);
                 this.lastRotated=time;
             }
-            if(keyCode==KeyCode.N&time-this.lastRotated>200){
+            else if(keyCode==KeyCode.N&time-this.lastRotated>200){
                 cam.rotate(time,300,1000);
                 this.lastRotated=time;
             }
@@ -232,7 +235,7 @@ public class GameScene extends Scene {
         //terrain update
         for(Walkable terrain:walkables){terrain.update(time);}
 
-        this.objectiveTracker.setText("Parcourez "+this.objective+"m\n"+(player.getX()/80-1)+"/"+this.objective);
+        this.objectiveTracker.setText("Parcourez "+this.objective+"m\n"+(int)(player.getX()/80-1)+"/"+this.objective);
 
         if(player.getHealth()<=0){
             Text text=new Text(200,100,"Défaite");
@@ -272,6 +275,7 @@ public class GameScene extends Scene {
         return cam.getY()+yMousePos*cos(angle)-xMousePos*sin(angle);
     }
 
+    public static double getPixelToMeter(){return pixelToMeter;}
     public void addOpenMenuListener(OpenMenu listener){this.openMenuListeners.add(listener);}
     public static ArrayList<Walkable> getWalkables(){return walkables;}
     public static ArrayList<Creature> getCreatures(){return creatures;}

@@ -1,6 +1,7 @@
 package game;
 
 import game.entities.Entity;
+import javafx.geometry.Point3D;
 import javafx.scene.layout.Pane;
 
 import static java.lang.Math.*;

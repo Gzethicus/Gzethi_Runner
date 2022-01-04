@@ -1,4 +1,5 @@
 import game.GameScene;
+import javafx.scene.shape.Rectangle;
 import menu.LoadingScene;
 import menu.MenuScene;
 import javafx.application.Application;
