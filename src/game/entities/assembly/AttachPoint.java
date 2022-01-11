@@ -2,11 +2,11 @@ package game.entities.assembly;
 
 import static java.lang.Math.PI;
 
-public class AttachPoint implements Cloneable{
+public class AttachPoint{
     private double x;
     private double y;
     private double layer;
-    private boolean mirroring;
+    private final boolean mirroring;
     private boolean mirrored;
     private OriginPoint origin;
     private double r;
@@ -30,21 +30,8 @@ public class AttachPoint implements Cloneable{
         this.x=target.x;
         this.y=target.y;
         this.layer=target.layer;
-        this.mirroring=target.mirroring;
         this.r=target.r;
         this.baseAngle=target.baseAngle;
-    }
-
-    public AttachPoint clone(){
-        try {
-            super.clone();
-        } catch (CloneNotSupportedException e) {
-            e.printStackTrace();
-        }
-        AttachPoint clone=new AttachPoint(this.x,this.y,this.layer,this.mirroring);
-        if(this.origin!=null){clone.setOrigin(this.origin);}
-        clone.setAngle(this.angle);
-        return clone;
     }
 
     public void setAngle(double angle){this.angle=angle;}

@@ -1,30 +1,12 @@
-package game.entities.assembly.subParts;
+package game.entities.equipment.subParts;
 
 import game.entities.assembly.AttachPoint;
 import game.entities.assembly.OriginPoint;
 
-import static game.entities.assembly.subParts.BaseSets.*;
+import static game.entities.equipment.subParts.BaseSets.*;
 
-public enum AttachSets{
-    TORSO       (new double[]{18,40},new double[][][][]{{TORSO0.get()}},new int[][]{{1,2},{3,4}}),
-
-    ARM         (new double[]{6,5},new double[][][][]{{ARM0.get()}},new int[][]{{}}),
-
-    FOREARM     (new double[]{6,4},new double[][][][]{{FOREARM0.get()}},new int[][]{{}}),
-
-    PALM        (new double[]{6,0},new double[][][][]{{PALM0.get()}},new int[][]{{4,5}}),
-
-    CLAW        (new double[]{2,1},new double[][][][]{{{{}}}},new int[][]{{}}),
-
-
-    THIGH       (new double[]{15,12},new double[][][][]{{THIGH0.get(),THIGH0.get(),THIGH0.get(),THIGH0.get()}},new int[][]{{}}),
-
-    LEG         (new double[]{5,-5},new double[][][][]{{LEG0.get()}},new int[][]{{}}),
-
-    FOOT        (new double[]{5,3},new double[][][][]{{{{}}}},new int[][]{{}}),
-
-
-    HEAD        (new double[]{27,54},new double[][][][]{{{{}}}},new int[][]{{}}),;
+public enum AttachSets {
+    PHASEBLADE      (new double[]{10,25},new double[][][][]{{NULL.get()}},new int[][]{{}}),;
 
     private final OriginPoint origin;
     private final AttachPoint[][][] set;

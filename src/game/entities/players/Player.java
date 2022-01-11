@@ -9,6 +9,7 @@ import game.entities.projectiles.Projectile;
 import game.entities.Shot;
 import game.environment.rooms.Room;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 
 public class Player extends Creature {
     //status
@@ -23,7 +24,7 @@ public class Player extends Creature {
     private long shootCooldown =400;
     private long shootDuration =500;
 
-    public Player(double x, double y, Room room, int health, Rectangle2D hitBox, AnimatedSprite sprite) {
+    public Player(double x, double y, Room room, int health, Rectangle2D hitBox, Node sprite) {
         super(x, y, room, true, 2, 5, 300, health, 4, 1,
                 0, 1000, 1, hitBox,sprite);
         this.dashDistance=5;
@@ -42,6 +43,10 @@ public class Player extends Creature {
         //attack handling
         this.isShooting=time-this.startedShooting<this.shootDuration;
     }
+
+    public void mainAction(long time){}
+    public void secondaryAction(long time){}
+    public void detach(int attach, long time){}
 
     public void shoot(long time){
         if(time-this.startedShooting>this.shootCooldown&this.energy>=10){

@@ -16,5 +16,7 @@ public enum TorsoMove{
 
     TorsoMove(long[][] durations, double[][] angles){this.animation=new MoveSet(durations,angles);}
 
+    TorsoMove(long[][] durations, double[][] angles, long[][] mirroredDurations, double[][] mirroredAngles){this.animation=new MoveSet(durations,angles,mirroredDurations,mirroredAngles);}
+
     public MoveSet get(){return animation;}
 }

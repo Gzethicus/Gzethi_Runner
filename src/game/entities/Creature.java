@@ -1,12 +1,12 @@
 package game.entities;
 
-import game.AnimatedSprite;
 import game.GameScene;
 import game.entities.players.EnergyChanged;
 import game.entities.projectiles.Projectile;
 import game.environment.Walkable;
 import game.environment.rooms.Room;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 
 import java.util.ArrayList;
 
@@ -47,7 +47,7 @@ public class Creature extends Entity{
 
     public Creature(double x, double y, Room room, boolean isFacingRight,
                     double walkSpeed, double runSpeed, long jumpDuration, int health, int maxHealth, int toughness,
-                    int damageOnContact, long invulnTimer, int team, Rectangle2D hitBox, AnimatedSprite sprite){
+                    int damageOnContact, long invulnTimer, int team, Rectangle2D hitBox, Node sprite){
         super(x, y, room, team, isFacingRight, hitBox, sprite);
         this.walkSpeed=walkSpeed;
         this.runSpeed=runSpeed;
@@ -90,8 +90,8 @@ public class Creature extends Entity{
                     & walkable.intersects(estHitBox)
                     & this.vY > 0
                     & (!this.freeFall | walkable.isSolid())) {
-                if(!this.isGrounded){this.sprite.resetFrame(time);}
-                this.vY = 0;
+                //if(!this.isGrounded){this.sprite.resetFrame(time);}
+                this.vY=0;
                 this.y = (walkable.getHitBox().getMinY() - (this.yOffset + this.hitBoxHeight));
                 this.forcedSpeed = walkable.getForcedSpeed();
                 falling=false;
@@ -111,7 +111,7 @@ public class Creature extends Entity{
                 }
             }
         }
-        if(this.isGrounded&falling){this.sprite.resetFrame(time);}
+        //if(this.isGrounded&falling){this.sprite.resetFrame(time);}
         this.isGrounded=!falling;
         this.freeFall=false;
 
@@ -123,16 +123,20 @@ public class Creature extends Entity{
         //hit detection
         if (!this.isInvulnerable){
             //from enemies
-            for (Creature creature : GameScene.getCreatures()){
-                if (creature.getTeam()!=this.team & this.hitBox.intersects(creature.getHitBox())){
-                    this.hurt(creature.getDamageOnContact(),time);
+            for (Entity creature : GameScene.getEntities()){
+                if(creature instanceof Creature){
+                    if(creature.getTeam()!=this.team & this.hitBox.intersects(creature.getHitBox())){
+                        this.hurt(((Creature)creature).getDamageOnContact(),time);
+                    }
                 }
             }
             //from projectiles
-            for (Projectile projectile : GameScene.getProjectiles()){
-                if (projectile.getTeam()!=this.team & this.hitBox.intersects(projectile.getHitBox())){
-                    this.hurt(projectile.getDamage(), time);
-                    projectile.pierce(this.toughness);
+            for (Entity projectile : GameScene.getEntities()){
+                if(projectile instanceof Projectile){
+                    if(projectile.getTeam()!=this.team & this.hitBox.intersects(projectile.getHitBox())){
+                        this.hurt(((Projectile)projectile).getDamage(), time);
+                        ((Projectile)projectile).pierce(this.toughness);
+                    }
                 }
             }
         }
@@ -205,6 +209,10 @@ public class Creature extends Entity{
             this.setFacingRight(direction);
             this.walking=!this.running;
         }
+    }
+
+    public void triggerShoot(Projectile projectile){
+        for(Shot listener:shotListeners)listener.onShot(projectile);
     }
 
     public void heal(int amount){this.health=Math.min(this.health+amount,this.maxHealth);}

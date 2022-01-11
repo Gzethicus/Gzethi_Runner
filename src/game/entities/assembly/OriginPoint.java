@@ -17,5 +17,4 @@ public class OriginPoint{
     public double getLocalY(){return this.y;}
     public double getX(){return this.getLinkedTo()!=null?this.getLinkedTo().getX()+this.getLinkedTo().getOrigin().getX():this.x;}
     public double getY(){return this.getLinkedTo()!=null?this.getLinkedTo().getY()+this.getLinkedTo().getOrigin().getY():this.y;}
-
 }

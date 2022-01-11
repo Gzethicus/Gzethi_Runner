@@ -8,7 +8,7 @@ import game.entities.assembly.subParts.SubParts;
 
 public class Torso extends Part{
     public Torso(Creature owner){
-        super(SubParts.TORSO.get(Sprites.PH_TORSO.get()), 1, 5, MoveClass.TORSO);
+        super(SubParts.TORSO.get(Sprites.PH_TORSO.get()), 1, 5, MoveClass.TORSO.getIndex());
         this.addAttach(0,0);
         this.addAttach(0,1);
         this.addAttach(0,2);

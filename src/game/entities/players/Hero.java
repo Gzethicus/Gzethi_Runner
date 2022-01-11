@@ -1,5 +1,6 @@
 package game.entities.players;
 
+import game.AnimatedSprite;
 import game.environment.rooms.Room;
 import javafx.geometry.Rectangle2D;
 
@@ -24,7 +25,7 @@ public class Hero extends Player {
         }
         if(this.isShooting){animation+=4;System.out.println("isShooting");}
         if(((time-this.invulnStarted)/150)%2==0&&(time-this.invulnStarted)<this.invulnTimer){animation=8;}
-        this.sprite.setDefaultAnimation(animation);
-        this.sprite.update(time);
+        ((AnimatedSprite)this.sprite).setDefaultAnimation(animation);
+        ((AnimatedSprite)this.sprite).update(time);
     }
 }

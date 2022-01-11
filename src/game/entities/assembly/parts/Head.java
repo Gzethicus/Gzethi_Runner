@@ -7,6 +7,6 @@ import game.entities.assembly.subParts.SubParts;
 
 public class Head extends Part{
     public Head(){
-        super(SubParts.HEAD.get(Sprites.PH_HEAD.get()), 1, 0, MoveClass.HEAD);
+        super(SubParts.HEAD.get(Sprites.PH_HEAD.get()), 1, 0, MoveClass.HEAD.getIndex());
     }
 }

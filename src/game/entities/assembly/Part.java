@@ -1,30 +1,33 @@
 package game.entities.assembly;
 
+import game.GameScene;
 import game.State;
+import game.Updatable;
 import game.entities.Creature;
-import game.entities.assembly.movesets.MoveClass;
+import game.entities.Entity;
+import game.entities.assembly.constructed.Gz_37;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.transform.Scale;
 
-public class Part extends Group implements Attachable{
+public class Part extends Group implements Updatable{
     protected final SubPart[] subParts;
     private final OriginPoint origin;
     private final AttachPoint[] attaches;
-    private final Attachable[] attached;
+    private final Part[] attached;
     private boolean mirrored;
     protected boolean facingRight=true;
     protected Creature owner;
 
-    private final MoveClass aClass;
+    private final int aClass;
     private final int[] position;
-    protected int[] maxPosition;
+    private int[] maxPosition;
     private double[][] angles;
     private long[][] positionDuration;
     private final long[] rotationEnd;
     private final Scale scale=new Scale();
 
-    public Part(SubPart subPart, int subParts, int attaches, MoveClass aClass){
+    public Part(SubPart subPart, int subParts, int attaches, int aClass){
         this.subParts=new SubPart[subParts];
         this.position=new int[subParts];
         this.rotationEnd=new long[subParts];
@@ -38,11 +41,11 @@ public class Part extends Group implements Attachable{
         this.subParts[0]=subPart;
         this.origin=subPart.getOrigin();
         this.attaches=new AttachPoint[attaches];
-        this.attached=new Attachable[attaches];
+        this.attached=new Part[attaches];
         this.getChildren().add(subPart);
 
-        this.scale.setPivotX(subPart.getBoundsInLocal().getWidth()/2);
-        this.scale.setPivotY(subPart.getBoundsInLocal().getHeight()/2);
+        this.scale.setPivotX(this.origin.getLocalX());
+        this.scale.setPivotY(this.origin.getLocalY());
         this.getTransforms().add(this.scale);
     }
 
@@ -54,22 +57,20 @@ public class Part extends Group implements Attachable{
             }
             subParts[subPart].update(time);
         }
-        for(Attachable attached:this.attached){if(attached!=null)attached.update(time);}
+        for(Part attached:this.attached){if(attached!=null)attached.update(time);}
     }
 
     public void setState(State state, long time){
-        this.positionDuration=state.getAnim().getAnimations(this.aClass).getDurations();
-        this.angles=state.getAnim().getAnimations(this.aClass).getAngles();
+        this.positionDuration=state.getAnim().getAnimations(this.aClass).getDurations(!this.mirrored^this.facingRight);
+        this.angles=state.getAnim().getAnimations(this.aClass).getAngles(!this.mirrored^this.facingRight);
         this.maxPosition=state.getAnim().getAnimations(this.aClass).getMaxPos();
 
         for(int subPart=0;subPart<subParts.length;subPart++){
-            this.position[subPart]=this.mirrored?0:this.maxPosition[subPart]/2;
-            subParts[subPart].rotate(this.angles[subPart][this.position[subPart]], this.positionDuration[subPart][this.position[subPart]],time);
+            this.position[subPart]=0;
+            this.rotationEnd[subPart]=subParts[subPart].rotate(this.angles[subPart][this.position[subPart]], this.positionDuration[subPart][this.position[subPart]],time);
         }
-        for(Attachable part:this.attached){
-            if(part instanceof Part){
-                ((Part) part).setState(state,time);
-            }
+        for(Part part:this.attached){
+            if(part!=null)part.setState(state,time);
         }
     }
 
@@ -85,19 +86,39 @@ public class Part extends Group implements Attachable{
         part.setViewOrder(this.subParts[subPart].getAttach(attach).getLayer());
     }
 
-    public void attach(Attachable object, int attach){
+    public void attach(Part object, int attach){
         this.attached[attach]=object;
         object.getOrigin().link(this.attaches[attach]);
         object.setOwner(this.owner);
         object.setMirror(this.attaches[attach].isMirroring());
         object.setViewOrder(this.attaches[attach].getLayer());
-        this.getChildren().add((Node)object);
+        this.getChildren().add(object);
     }
+
+    public void detach(int attach, long time){
+        if(this.attached[attach]!=null){
+            Part removed=this.attached[attach];
+            removed.setOwner(null);
+            Rectangle2D hitbox=new Rectangle2D(removed.getBoundsInLocal().getMinX(),removed.getBoundsInLocal().getMinY(),removed.getBoundsInLocal().getWidth(),removed.getBoundsInLocal().getHeight());
+            Entity part=new Entity(this.owner.getX()+(this.owner.getFacingRight()?removed.origin.getX()-removed.origin.getLocalX():-removed.origin.getX()+2*removed.origin.getLocalX()+((Gz_37)this.owner).getOrigin().getLocalX()),
+                    this.owner.getY()+removed.origin.getY()-removed.origin.getLocalY(),
+                    this.owner.getRoom(),0,this.owner.getFacingRight(),hitbox,removed);
+            removed.getOrigin().unlink();
+            removed.setFacingRight(this.owner.getFacingRight());
+            removed.setState(State.STILL,time);
+            GameScene.addToWorld(part);
+            part.setViewOrder(removed.getViewOrder());
+            this.getChildren().remove(removed);
+            this.attached[attach]=null;
+        }
+    }
+
+    public void mainAction(long time){}
 
     public void setMirror(boolean mirror){
         this.mirrored=mirror;
         for(SubPart subPart:this.subParts){subPart.setMirror(subPart.getOrigin().getLinkedTo()!=null&&subPart.getOrigin().getLinkedTo().isMirroring());}
-        for(Attachable object:this.attached){if(object!=null)object.setMirror(object.getOrigin().getLinkedTo().isMirroring());}
+        for(Part object:this.attached){if(object!=null)object.setMirror(object.getOrigin().getLinkedTo().isMirroring());}
     }
 
     public void addAttach(int subPart, int attach){
@@ -111,16 +132,20 @@ public class Part extends Group implements Attachable{
 
     public OriginPoint getOrigin(){return this.origin;}
 
-    public void refreshTransforms(){for(SubPart subPart:this.subParts){subPart.refreshTransforms();}}
-
     public void setFacingRight(boolean facingRight){
         for(SubPart subPart:this.subParts){subPart.setFacingRight(facingRight);}
-        for(Attachable object:this.attached){if(object!=null)object.setFacingRight(facingRight);}
+        for(Part object:this.attached){if(object!=null)object.setFacingRight(facingRight);}
         this.facingRight=facingRight;
         if(this.origin.getLinkedTo()!=null)this.setViewOrder(this.origin.getLinkedTo().getLayer());
         if(this.origin.getLinkedTo()==null)this.scale.setX(facingRight?1:-1);
     }
 
+    protected void setOverriddenPos(long duration,double[] angles,long time){
+        for(int i=0;i<this.subParts.length;i++){
+            this.subParts[i].overriddenRotate(angles[i],0, time, duration);
+        }
+    }
+
     public void setOwner(Creature owner){this.owner=owner;}
-    public Attachable[] getAttached(){return this.attached;}
+    public Part[] getAttached(){return this.attached;}
 }

@@ -12,5 +12,5 @@ public enum MoveSets {
     MoveSets(MoveSet[] animations){this.moveSets=animations;}
 
 
-    public MoveSet getAnimations(MoveClass mClass){return moveSets[mClass.getIndex()];}
+    public MoveSet getAnimations(int mClass){return moveSets[mClass];}
 }

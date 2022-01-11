@@ -6,6 +6,7 @@ import game.WorldElement;
 import game.environment.rooms.Room;
 import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 
 import java.util.ArrayList;
 
@@ -29,7 +30,7 @@ public class Entity extends WorldElement {
     protected int hitAWall=0;
     protected Room inRoom;
 
-    public Entity(double x, double y, Room room, int team, boolean isFacingRight, Rectangle2D hitBox, AnimatedSprite sprite) {
+    public Entity(double x, double y, Room room, int team, boolean isFacingRight, Rectangle2D hitBox, Node sprite) {
         super(x, y, sprite);
         this.hitBox=hitBox;
         this.xOffset= hitBox.getMinX()-x;
@@ -45,9 +46,9 @@ public class Entity extends WorldElement {
     public void update(long time){
         double dt=this.lastUpdated==0?0:(time-this.lastUpdated)/1000.;
         this.lastUpdated=time;
-        this.locked=!(time>this.orientationLockEnd);
+        this.locked=(time<this.orientationLockEnd);
         if(!locked){this.facingRight=this.desiredOrientation;}
-        this.sprite.setScaleX(this.facingRight?1:-1);
+        if(this.sprite instanceof AnimatedSprite)this.sprite.setScaleX(this.facingRight?1:-1);
         this.vX=this.hitAWall!=0?0:this.targetSpeed+this.forcedSpeed+this.dashSpeed;
         this.x+=this.vX*dt*GameScene.getPixelToMeter();
         this.y+=this.vY*dt*GameScene.getPixelToMeter();
@@ -59,10 +60,14 @@ public class Entity extends WorldElement {
 
     public void setFacingRight(boolean facingRight){
         this.desiredOrientation=facingRight;
-        if(!locked){this.facingRight=facingRight;}
+        if(!this.locked){this.facingRight=facingRight;}
     }
 
-    public void lockOrient(long duration, long time){this.orientationLockEnd=time+duration;}
+    public void lockOrient(long duration, long time){
+        this.locked=true;
+        this.orientationLockEnd=time+duration;
+    }
+
     public boolean getFacingRight(){return this.facingRight;}
     protected void speedUpdate(){this.vX=this.targetSpeed+this.dashSpeed+this.forcedSpeed;}
     protected void updateHitBox(){this.hitBox=new Rectangle2D(this.x+this.xOffset,this.y+this.yOffset,this.hitBoxWidth,this.hitBoxHeight);}

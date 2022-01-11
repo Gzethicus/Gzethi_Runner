@@ -1,5 +1,6 @@
 package game.entities.npc;
 
+import game.AnimatedSprite;
 import game.GameScene;
 import game.State;
 import game.entities.Creature;
@@ -50,7 +51,7 @@ public class AntiHero extends Creature {
                 this.lastTurned=time;
                 this.nextPauseDuration=(long)(random()*3000);
             }else if(time-this.lastTurned>2000){
-                this.sprite.resetFrame(time);
+                ((AnimatedSprite)this.sprite).resetFrame(time);
             }else{this.walk();}
         }
         super.update(time);
@@ -60,7 +61,7 @@ public class AntiHero extends Creature {
             if(this.onCooldown&this.canShoot){
                 this.startedShooting =time;
                 this.canShoot =false;
-                this.sprite.resetFrame(time);
+                ((AnimatedSprite)this.sprite).resetFrame(time);
             }else{
                 canShoot =true;
             }
@@ -68,7 +69,7 @@ public class AntiHero extends Creature {
         }
         if(time>this.startedShooting +this.shootDuration&this.isShooting){
             this.isShooting =false;
-            this.sprite.resetFrame(time);
+            ((AnimatedSprite)this.sprite).resetFrame(time);
             Projectile projectile=new LaserProjectile(this.x+(this.getFacingRight()?76:1), this.y+45, this.inRoom, (int)((playerHitBox.getMinX()+playerHitBox.getMaxX())/2),(int)((playerHitBox.getMinY()+playerHitBox.getMaxY())/2),State.RED, this.team);
             for(Shot listener:shotListeners){listener.onShot(projectile);}
         }
@@ -85,15 +86,15 @@ public class AntiHero extends Creature {
             animation=3;
         }
         if(this.isShooting){animation+=4;}
-        this.sprite.setDefaultAnimation(animation);
-        this.sprite.update(time);
+        ((AnimatedSprite)this.sprite).setDefaultAnimation(animation);
+        ((AnimatedSprite)this.sprite).update(time);
     }
 
     public void shoot(long time){
         if(!this.onCooldown&this.canShoot){
             this.isShooting =true;
             this.onCooldown=true;
-            this.sprite.playAnimation(4,time);
+            ((AnimatedSprite)this.sprite).playAnimation(4,time);
         }
     }
 }

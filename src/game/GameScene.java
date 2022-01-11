@@ -11,8 +11,10 @@ import game.environment.platforms.*;
 import game.environment.rooms.*;
 import game.gui.*;
 import javafx.animation.AnimationTimer;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -40,11 +42,14 @@ public class GameScene extends Scene {
     private static final Space space=new Space();
     private static final ArrayList<Room> backgrounds = new ArrayList<>();
     private static final ArrayList<Walkable> walkables = new ArrayList<>();
-    private static final ArrayList<Creature> creatures = new ArrayList<>();
+    private static final ArrayList<Entity> entities = new ArrayList<>();
     private static final ArrayList<GUI> gui = new ArrayList<>();
-    private static final ArrayList<Projectile> projectiles = new ArrayList<>();
     private static final ArrayList<WorldElement> deletionList = new ArrayList<>();
+
     private final ArrayList<KeyCode> keyPresses=new ArrayList<>();
+    private final ArrayList<MouseButton> mousePresses=new ArrayList<>();
+    private boolean control;
+    private boolean shift;
     private static double xMousePos=0;
     private static double yMousePos=0;
 
@@ -72,8 +77,7 @@ public class GameScene extends Scene {
     public void startGame(int character, boolean cheats){
         backgrounds.clear();
         walkables.clear();
-        creatures.clear();
-        projectiles.clear();
+        entities.clear();
         this.gameIsRunning=true;
         cam = new Camera(150,400,worldPane);
         backgrounds.add(new Room(-800, 0, game.environment.rooms.Sprites.DESERT.get()));
@@ -94,7 +98,7 @@ public class GameScene extends Scene {
         walkables.add(new Obstacle(this.objective*80+200,0,1,450,Sprites.INVISIBLE.get()));
 
         Shot shotListener=(projectile -> {
-            projectiles.add(projectile);
+            entities.add(projectile);
             worldPane.getChildren().add(projectile);
         });
         /*for(int i=0;i<this.difficulty*5;i++){
@@ -106,7 +110,7 @@ public class GameScene extends Scene {
         player =character==0?new Hero(100,350, backgrounds.get(0),cheats?10:4):new game.entities.assembly.constructed.Gz_37(100,315, backgrounds.get(0),cheats?10:4);
         cam.setTarget(player);
         player.addShotListener(shotListener);
-        creatures.add(player);
+        entities.add(player);
 
         HeartMeter heartMeter=new HeartMeter(10, 10, player);
         EnergyBar energyBar=new EnergyBar(guiPane.getWidth()/2-22, guiPane.getHeight()-20, player);
@@ -124,6 +128,7 @@ public class GameScene extends Scene {
         spacePane.getChildren().add(space);
         for(Room room:backgrounds){
             worldPane.getChildren().add(room);
+            room.setViewOrder(100);
         }
         for(Walkable terrain:walkables){
             worldPane.getChildren().add(terrain);
@@ -131,16 +136,17 @@ public class GameScene extends Scene {
         guiPane.getChildren().add(energyBar);
         guiPane.getChildren().add(heartMeter);
         guiPane.getChildren().add(this.objectiveTracker);
-        for(Creature creature:creatures){worldPane.getChildren().add(creature);}
+        for(Entity entity:entities){worldPane.getChildren().add(entity);}
 
         //key tracking
         this.setOnKeyPressed((event)->{
             if(!gameIsRunning&gameIsResettable){
                 this.keyPresses.clear();
-                for(OpenMenu listener:openMenuListeners){
-                    listener.onMenuOpen();
-                }
+                this.mousePresses.clear();
+                for(OpenMenu listener:openMenuListeners){listener.onMenuOpen();}
             }else{
+                if(event.getCode()==KeyCode.SHIFT)this.shift=true;
+                if(event.getCode()==KeyCode.CONTROL)this.control=true;
                 boolean isInList=false;
                 for(KeyCode keyCode:keyPresses){
                     if(keyCode.equals(event.getCode())){
@@ -151,7 +157,30 @@ public class GameScene extends Scene {
                 if(!isInList){this.keyPresses.add(event.getCode());}
             }
         });
-        this.setOnKeyReleased((event)->this.keyPresses.remove(event.getCode()));
+        this.setOnKeyReleased((event)->{
+            if(event.getCode()==KeyCode.SHIFT)this.shift=false;
+            if(event.getCode()==KeyCode.CONTROL)this.control=false;
+            this.keyPresses.remove(event.getCode());
+        });
+
+        //mouse click tracking
+        this.setOnMousePressed((event)->{
+            if(!gameIsRunning&gameIsResettable){
+                this.keyPresses.clear();
+                this.mousePresses.clear();
+                for(OpenMenu listener:openMenuListeners){listener.onMenuOpen();}
+            }else{
+                boolean isInList=false;
+                for(MouseButton mouseButton:mousePresses){
+                    if(mouseButton.equals(event.getButton())){
+                        isInList=true;
+                        break;
+                    }
+                }
+                if(!isInList){this.mousePresses.add(event.getButton());}
+            }
+        });
+        this.setOnMouseReleased((event)->this.mousePresses.remove(event.getButton()));
 
         //mouse position tracking
         this.setOnMouseMoved(event->{
@@ -177,14 +206,24 @@ public class GameScene extends Scene {
         this.gameIsResettable=false;
         backgrounds.clear();
         walkables.clear();
-        creatures.clear();
-        projectiles.clear();
+        entities.clear();
         gui.clear();
         deletionList.clear();
         keyPresses.clear();
     }
 
     private void update(long time){
+        //mousebindings
+        for(MouseButton mouseButton:mousePresses){
+            if(mouseButton==MouseButton.PRIMARY){
+                if(this.control)player.detach(1,time);
+                else player.mainAction(time);
+            }
+            else if(mouseButton==MouseButton.SECONDARY){
+                if(this.control)player.detach(2,time);
+                else player.secondaryAction(time);}
+        }
+
         //keybindings
         for(KeyCode keyCode:keyPresses){
             if(keyCode==KeyCode.SPACE){player.jump(time);}
@@ -219,12 +258,9 @@ public class GameScene extends Scene {
             }
         }
 
-        for(Creature creature:creatures){creature.update(time);}
+        for(Entity entity:entities){entity.update(time);}
         for(GUI guiEl:gui){guiEl.update(time);}
         cam.update(time);
-
-        //updating projectiles
-        for(Projectile projectile:projectiles){projectile.update(time);}
 
         for(WorldElement toBeDeleted:deletionList){this.delete(toBeDeleted);}
         deletionList.clear();
@@ -257,10 +293,8 @@ public class GameScene extends Scene {
 
     private void delete(WorldElement toBeDeleted){
         worldPane.getChildren().remove(toBeDeleted);
-        if(Creature.class.isAssignableFrom(toBeDeleted.getClass())){
-            creatures.remove(toBeDeleted);
-        }else if(Projectile.class.isAssignableFrom(toBeDeleted.getClass())){
-            projectiles.remove(toBeDeleted);
+        if(toBeDeleted instanceof Entity){
+            entities.remove(toBeDeleted);
         }else{
             System.out.println("Can't process deletion!");
         }
@@ -276,10 +310,13 @@ public class GameScene extends Scene {
     }
 
     public static double getPixelToMeter(){return pixelToMeter;}
+    public static void addToWorld(Entity entity){
+        worldPane.getChildren().add(entity);
+        entities.add(entity);
+    }
     public void addOpenMenuListener(OpenMenu listener){this.openMenuListeners.add(listener);}
     public static ArrayList<Walkable> getWalkables(){return walkables;}
-    public static ArrayList<Creature> getCreatures(){return creatures;}
+    public static ArrayList<Entity> getEntities(){return entities;}
     public static Player getPlayer(){return player;}
-    public static ArrayList<Projectile> getProjectiles(){return projectiles;}
     public static void requestDelete(WorldElement toBeDeleted){deletionList.add(toBeDeleted);}
 }

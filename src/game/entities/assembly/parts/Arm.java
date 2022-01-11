@@ -8,7 +8,7 @@ import game.entities.assembly.subParts.*;
 public class Arm extends Part{
 
     public Arm(){
-        super(SubParts.ARM.get(Sprites.PH_ARM.get()), 7, 1, MoveClass.ARM);
+        super(SubParts.ARM.get(Sprites.PH_ARM.get()), 7, 1, MoveClass.ARM.getIndex());
         //forearm
         this.attach(SubParts.FOREARM.get(Sprites.PH_FOREARM.get()), 0,0);
         //palm

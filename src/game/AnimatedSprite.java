@@ -4,7 +4,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
-public class AnimatedSprite extends ImageView{
+public class AnimatedSprite extends ImageView implements Updatable{
     //Constant parameters
     private Image right;
     private Image left;
@@ -68,7 +68,7 @@ public class AnimatedSprite extends ImageView{
         this.maxFrame=maxFrame;
     }
 
-    public boolean update(long time){
+    public void update(long time){
         //initialisation
         if(timeOrigin==0){this.timeOrigin=time;}
 
@@ -89,9 +89,6 @@ public class AnimatedSprite extends ImageView{
 
         //select correct portion of spriteSheet
         this.setViewport(new Rectangle2D((this.bWidth +1)*this.frame,(this.bHeight +1)*this.animation,this.width,this.height));
-        boolean changed=this.changed;
-        this.changed=false;
-        return changed;
     }
 
     public void playAnimation(int animation, long duration, long time){
@@ -104,6 +101,12 @@ public class AnimatedSprite extends ImageView{
     }
     public void playAnimation(int animation, int loops, long time){playAnimation(animation,loops*this.totalDurations[animation],time);}
     public void playAnimation(int animation, long time){playAnimation(animation, 1, time);}
+
+    public boolean isChanged(){
+        boolean changed=this.changed;
+        this.changed=false;
+        return changed;
+    }
 
     public void setDefaultAnimation(int animation){
         this.defaultAnimation=animation;
