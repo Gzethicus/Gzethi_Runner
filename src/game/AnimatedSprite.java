@@ -57,8 +57,8 @@ public class AnimatedSprite extends ImageView implements Updatable{
         this.left=left;
         this.setImage(right);
 
-        this.bWidth =width;
-        this.bHeight =height;
+        this.bWidth=width;
+        this.bHeight=height;
         this.width=width;
         this.height=height;
         this.setViewport(new Rectangle2D(0,0,width,height));

@@ -8,22 +8,26 @@ import game.entities.assembly.parts.*;
 import game.entities.equipment.PhaseBlade;
 import game.entities.players.Player;
 import game.environment.rooms.Room;
+import game.physics.HitBox;
 import javafx.geometry.Rectangle2D;
 
 public class Gz_37 extends Player{
     private final Part core;
     private State state;
+    private final HitBox hitBox=new HitBox();
 
     public Gz_37(double x, double y, Room room, int health){
         super(x, y, room, health, new Rectangle2D(x+17,y-30,47,171), new Torso(null));
         this.core=(Torso)this.getChildren().get(0);
         this.core.setOwner(this);
+        this.hitBox.addSubBox(this.core.getHitBox());
         this.core.attach(new Head(),0);
         this.core.attach(new Arm(),1);
         this.core.attach(new PlatedArm(),2);
         this.core.attach(new Leg(),3);
         this.core.attach(new Leg(),4);
         this.core.getAttached()[1].attach(new PhaseBlade(),0);
+        this.displayHitBox();
     }
 
     @Override
@@ -80,4 +84,6 @@ public class Gz_37 extends Player{
     }
 
     public OriginPoint getOrigin(){return this.core.getOrigin();}
+    public void displayHitBox(){this.hitBox.setVisible(true);}
+    public void hideHitBox(){this.hitBox.setVisible(false);}
 }

@@ -1,6 +1,9 @@
 package game;
 
+import com.sun.javafx.scene.text.TextLayout;
 import game.entities.*;
+import game.entities.assembly.constructed.Gz_37;
+import game.entities.equipment.subParts.HitBoxes;
 import game.entities.npc.*;
 import game.entities.players.*;
 import game.entities.projectiles.*;
@@ -10,7 +13,10 @@ import game.environment.obstacles.Sprites;
 import game.environment.platforms.*;
 import game.environment.rooms.*;
 import game.gui.*;
+import game.physics.HitBox;
+import game.physics.Intersectible;
 import javafx.animation.AnimationTimer;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
@@ -18,6 +24,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
@@ -75,9 +82,15 @@ public class GameScene extends Scene {
     }
 
     public void startGame(int character, boolean cheats){
+        //clearing any potential leftover
         backgrounds.clear();
         walkables.clear();
         entities.clear();
+        pane.getChildren().clear();
+        spacePane.getChildren().clear();
+        worldPane.getChildren().clear();
+        guiPane.getChildren().clear();
+
         this.gameIsRunning=true;
         cam = new Camera(150,400,worldPane);
         backgrounds.add(new Room(-800, 0, game.environment.rooms.Sprites.DESERT.get()));
@@ -104,7 +117,7 @@ public class GameScene extends Scene {
         /*for(int i=0;i<this.difficulty*5;i++){
             AntiHero foe = new AntiHero((int)(Math.random()*(this.objective*80-900))+1000, 350,backgrounds.get(2),false);
             foe.addShotListener(shotListener);
-            creatures.add(foe);
+            entities.add(foe);
         }*/
 
         player =character==0?new Hero(100,350, backgrounds.get(0),cheats?10:4):new game.entities.assembly.constructed.Gz_37(100,315, backgrounds.get(0),cheats?10:4);
@@ -118,10 +131,6 @@ public class GameScene extends Scene {
         gui.add(energyBar);
 
         //putting images on window
-        pane.getChildren().clear();
-        spacePane.getChildren().clear();
-        worldPane.getChildren().clear();
-        guiPane.getChildren().clear();
         pane.getChildren().add(spacePane);
         pane.getChildren().add(worldPane);
         pane.getChildren().add(guiPane);
@@ -309,11 +318,14 @@ public class GameScene extends Scene {
         return cam.getY()+yMousePos*cos(angle)-xMousePos*sin(angle);
     }
 
-    public static double getPixelToMeter(){return pixelToMeter;}
-    public static void addToWorld(Entity entity){
-        worldPane.getChildren().add(entity);
-        entities.add(entity);
+    public static void addToWorld(Node child){
+        worldPane.getChildren().add(child);
+        if(child instanceof Entity){
+            entities.add((Entity)child);
+        }
     }
+
+    public static double getPixelToMeter(){return pixelToMeter;}
     public void addOpenMenuListener(OpenMenu listener){this.openMenuListeners.add(listener);}
     public static ArrayList<Walkable> getWalkables(){return walkables;}
     public static ArrayList<Entity> getEntities(){return entities;}

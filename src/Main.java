@@ -1,4 +1,5 @@
 import game.GameScene;
+import game.entities.assembly.subParts.HitBoxes;
 import javafx.scene.shape.Rectangle;
 import menu.LoadingScene;
 import menu.MenuScene;

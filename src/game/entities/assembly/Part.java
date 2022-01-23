@@ -3,9 +3,10 @@ package game.entities.assembly;
 import game.GameScene;
 import game.State;
 import game.Updatable;
+import game.WorldElement;
 import game.entities.Creature;
 import game.entities.Entity;
-import game.entities.assembly.constructed.Gz_37;
+import game.physics.HitBox;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.transform.Scale;
@@ -14,10 +15,11 @@ public class Part extends Group implements Updatable{
     protected final SubPart[] subParts;
     private final OriginPoint origin;
     private final AttachPoint[] attaches;
+    private final HitBox hitBox;
     private final Part[] attached;
     private boolean mirrored;
     protected boolean facingRight=true;
-    protected Creature owner;
+    protected WorldElement owner;
 
     private final int aClass;
     private final int[] position;
@@ -47,6 +49,8 @@ public class Part extends Group implements Updatable{
         this.scale.setPivotX(this.origin.getLocalX());
         this.scale.setPivotY(this.origin.getLocalY());
         this.getTransforms().add(this.scale);
+        this.hitBox=new HitBox();
+        this.hitBox.addSubBox(subPart.getHitBox());
     }
 
     public void update(long time){
@@ -82,6 +86,7 @@ public class Part extends Group implements Updatable{
             }
         }
         part.getOrigin().link(this.subParts[subPart].getAttach(attach));
+        this.hitBox.addSubBox(part.getHitBox());
         this.getChildren().add(part);
         part.setViewOrder(this.subParts[subPart].getAttach(attach).getLayer());
     }
@@ -92,20 +97,21 @@ public class Part extends Group implements Updatable{
         object.setOwner(this.owner);
         object.setMirror(this.attaches[attach].isMirroring());
         object.setViewOrder(this.attaches[attach].getLayer());
+        this.hitBox.addSiblingBox(object.hitBox);
         this.getChildren().add(object);
     }
 
     public void detach(int attach, long time){
         if(this.attached[attach]!=null){
             Part removed=this.attached[attach];
-            removed.setOwner(null);
             Rectangle2D hitbox=new Rectangle2D(removed.getBoundsInLocal().getMinX(),removed.getBoundsInLocal().getMinY(),removed.getBoundsInLocal().getWidth(),removed.getBoundsInLocal().getHeight());
-            Entity part=new Entity(this.owner.getX()+(this.owner.getFacingRight()?removed.origin.getX()-removed.origin.getLocalX():-removed.origin.getX()+2*removed.origin.getLocalX()+((Gz_37)this.owner).getOrigin().getLocalX()),
-                    this.owner.getY()+removed.origin.getY()-removed.origin.getLocalY(),
-                    this.owner.getRoom(),0,this.owner.getFacingRight(),hitbox,removed);
+            Entity part=new Entity(removed.getOrigin().getGlobalX()-removed.getOrigin().getLocalX(),
+                    removed.getOrigin().getGlobalY()-removed.getOrigin().getLocalY(),
+                    ((Creature)this.owner).getRoom(),0,this.owner.getFacingRight(),hitbox,removed);
             removed.getOrigin().unlink();
             removed.setFacingRight(this.owner.getFacingRight());
             removed.setState(State.STILL,time);
+            removed.setOwner(part);
             GameScene.addToWorld(part);
             part.setViewOrder(removed.getViewOrder());
             this.getChildren().remove(removed);
@@ -146,6 +152,13 @@ public class Part extends Group implements Updatable{
         }
     }
 
-    public void setOwner(Creature owner){this.owner=owner;}
+    public void setOwner(WorldElement owner){
+        this.owner=owner;
+        this.origin.setOwner(owner);
+    }
+
+    public void displayHitBox(){for(SubPart subPart:this.subParts)subPart.displayHitBox();}
+    public void hideHitBox(){for(SubPart subPart:this.subParts)subPart.hideHitBox();}
+    public HitBox getHitBox(){return this.hitBox;}
     public Part[] getAttached(){return this.attached;}
 }

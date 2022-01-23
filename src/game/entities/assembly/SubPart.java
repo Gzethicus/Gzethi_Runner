@@ -1,6 +1,7 @@
 package game.entities.assembly;
 
 import game.AnimatedSprite;
+import game.physics.HitBox;
 import javafx.scene.Parent;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
@@ -8,6 +9,7 @@ import javafx.scene.transform.Translate;
 
 public class SubPart extends Parent{
     private final AnimatedSprite sprite;
+    private final HitBox hitBox;
 
     private final OriginPoint origin;
     private final AttachPoint[] attaches;
@@ -30,10 +32,12 @@ public class SubPart extends Parent{
     private long overriddenRotationEnd;
     private long overrideEnd;
 
-    public SubPart(OriginPoint origin, AttachPoint[][][] sets, int[] mirrorIndexes, AnimatedSprite sprite){
+    public SubPart(OriginPoint origin, AttachPoint[][][] sets, int[] mirrorIndexes, AnimatedSprite sprite, HitBox hitBox){
         this.origin=origin;
         this.sets=sets;
         this.attaches=new AttachPoint[sets[0][0].length];
+        this.hitBox=hitBox;
+        this.hitBox.setOrigin(this.origin);
         if(this.attaches.length!=0){
             for(int i=0;i<this.attaches.length;i++){
                 this.attaches[i]=new AttachPoint(0,0,0,this.sets[0][0][i].isMirroring());
@@ -57,20 +61,22 @@ public class SubPart extends Parent{
     public void update(long time){
         if(time>this.overrideEnd){
             if(time<this.rotationEnd){
-                this.rotation.setAngle(((this.origin.getLinkedTo()!=null)?this.origin.getLinkedTo().getAngle():0)+this.lastAngle+(this.targetAngle-this.lastAngle)*(time-this.rotationStart)/(this.rotationEnd-this.rotationStart));
+                this.setAngle(((this.origin.getLinkedTo()!=null)?this.origin.getLinkedTo().getAngle():0)+this.lastAngle+(this.targetAngle-this.lastAngle)*(time-this.rotationStart)/(this.rotationEnd-this.rotationStart));
             }else{
                 this.rotationEnd=time;
             }
         }else if(time<this.overriddenRotationEnd){
-            this.rotation.setAngle(((this.origin.getLinkedTo()!=null)?this.origin.getLinkedTo().getAngle():0)+this.lastAngle+(this.overriddenTargetAngle-this.lastAngle)*(time-this.overriddenRotationStart)/(this.overriddenRotationEnd-this.overriddenRotationStart));
+            this.setAngle(((this.origin.getLinkedTo()!=null)?this.origin.getLinkedTo().getAngle():0)+this.lastAngle+(this.overriddenTargetAngle-this.lastAngle)*(time-this.overriddenRotationStart)/(this.overriddenRotationEnd-this.overriddenRotationStart));
         }else{
-            this.rotation.setAngle(((this.origin.getLinkedTo()!=null)?this.origin.getLinkedTo().getAngle():0)+this.overriddenTargetAngle);
+            this.setAngle(((this.origin.getLinkedTo()!=null)?this.origin.getLinkedTo().getAngle():0)+this.overriddenTargetAngle);
             this.lastAngle=this.overriddenTargetAngle;
         }
         for(AttachPoint attach:this.attaches){attach.setAngle(this.rotation.getAngle());}
         this.sprite.update(time);
         if(this.sprite.isChanged()){this.switchSet(this.sprite.getAnim(),this.sprite.getFrame());}
         this.refreshTransforms();
+        this.hitBox.refreshBounds();
+        this.hitBox.refreshVisual();
     }
 
     public long rotate(double angle, long duration, long time){
@@ -84,7 +90,7 @@ public class SubPart extends Parent{
         this.targetAngle=angle;
         this.rotationEnd=this.rotationStart+duration;
         if(duration<=0&time>this.overrideEnd){
-            this.rotation.setAngle(this.origin.getLinkedTo().getAngle()+angle);
+            this.setAngle(this.origin.getLinkedTo().getAngle()+angle);
             this.refreshTransforms();
             for(AttachPoint attach:this.attaches){attach.setAngle(this.rotation.getAngle());}
         }
@@ -97,7 +103,7 @@ public class SubPart extends Parent{
         this.overriddenRotationEnd=this.overriddenRotationStart+duration;
         this.overriddenTargetAngle=angle;
         if(duration<=0){
-            this.rotation.setAngle(this.origin.getLinkedTo().getAngle()+angle);
+            this.setAngle(this.origin.getLinkedTo().getAngle()+angle);
             this.refreshTransforms();
             for(AttachPoint attach:this.attaches){attach.setAngle(this.rotation.getAngle());}
         }
@@ -132,9 +138,25 @@ public class SubPart extends Parent{
         if(this.origin.getLinkedTo()!=null&!this.original)this.setViewOrder(this.origin.getLinkedTo().getLayer());
     }
 
+    private void setAngle(double angle){
+        this.rotation.setAngle(angle);
+        this.hitBox.setAngle(angle);
+    }
+
+    public void setXScale(double x){
+        this.scale.setX(x);
+        this.hitBox.setScaleX(x);
+    }
+
+    public void setYScale(double y){
+        this.scale.setY(y);
+        this.hitBox.setScaleY(y);
+    }
+
+    public void displayHitBox(){this.hitBox.setVisible(true);}
+    public void hideHitBox(){this.hitBox.setVisible(false);}
+    public HitBox getHitBox(){return this.hitBox;}
     public void setOriginal(){this.original=true;}
-    public void setXScale(double x){this.scale.setX(x);}
-    public void setYScale(double y){this.scale.setY(y);}
     public OriginPoint getOrigin(){return this.origin;}
     public AttachPoint getAttach(int attach){return this.attaches[attach];}
 }

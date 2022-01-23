@@ -25,6 +25,8 @@ public class WorldElement extends Parent{
         ((Updatable)this.sprite).update(time);
     }
 
+    public boolean getFacingRight(){return true;}
+
     public double getX(){return this.x;}
     public double getY(){return this.y;}
 }
